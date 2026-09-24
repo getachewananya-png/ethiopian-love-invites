@@ -10,33 +10,69 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CreateTemplateIdRouteImport } from './routes/create/$templateId'
+import { Route as InviteSlugRouteImport } from './routes/invite/$slug'
+import { Route as TemplatesTemplateIdRouteImport } from './routes/templates/$templateId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreateTemplateIdRoute = CreateTemplateIdRouteImport.update({
+  id: '/create/$templateId',
+  path: '/create/$templateId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteSlugRoute = InviteSlugRouteImport.update({
+  id: '/invite/$slug',
+  path: '/invite/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesTemplateIdRoute = TemplatesTemplateIdRouteImport.update({
+  id: '/templates/$templateId',
+  path: '/templates/$templateId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/create/$templateId': typeof CreateTemplateIdRoute
+  '/invite/$slug': typeof InviteSlugRoute
+  '/templates/$templateId': typeof TemplatesTemplateIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/create/$templateId': typeof CreateTemplateIdRoute
+  '/invite/$slug': typeof InviteSlugRoute
+  '/templates/$templateId': typeof TemplatesTemplateIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/create/$templateId': typeof CreateTemplateIdRoute
+  '/invite/$slug': typeof InviteSlugRoute
+  '/templates/$templateId': typeof TemplatesTemplateIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    '/' | '/create/$templateId' | '/invite/$slug' | '/templates/$templateId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/create/$templateId' | '/invite/$slug' | '/templates/$templateId'
+  id:
+    | '__root__'
+    | '/'
+    | '/create/$templateId'
+    | '/invite/$slug'
+    | '/templates/$templateId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CreateTemplateIdRoute: typeof CreateTemplateIdRoute
+  InviteSlugRoute: typeof InviteSlugRoute
+  TemplatesTemplateIdRoute: typeof TemplatesTemplateIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +84,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/create/$templateId': {
+      id: '/create/$templateId'
+      path: '/create/$templateId'
+      fullPath: '/create/$templateId'
+      preLoaderRoute: typeof CreateTemplateIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$slug': {
+      id: '/invite/$slug'
+      path: '/invite/$slug'
+      fullPath: '/invite/$slug'
+      preLoaderRoute: typeof InviteSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates/$templateId': {
+      id: '/templates/$templateId'
+      path: '/templates/$templateId'
+      fullPath: '/templates/$templateId'
+      preLoaderRoute: typeof TemplatesTemplateIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CreateTemplateIdRoute: CreateTemplateIdRoute,
+  InviteSlugRoute: InviteSlugRoute,
+  TemplatesTemplateIdRoute: TemplatesTemplateIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,20 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790246897718,
+      "tag": "0000_create_wedding_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790246966688,
+      "tag": "0001_secure_wedding_image_uploads",
+      "breakpoints": true
+    }
+  ]
 }
