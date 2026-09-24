@@ -14,7 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      invitations: {
+        Row: {
+          address: string | null
+          address_am: string | null
+          bride_name: string
+          bride_name_am: string | null
+          ceremony_type: string | null
+          created_at: string
+          custom_message: string | null
+          custom_message_am: string | null
+          customization: Json
+          email: string | null
+          gallery_photos: Json
+          groom_name: string
+          groom_name_am: string | null
+          how_we_met: string | null
+          id: string
+          is_published: boolean
+          maps_url: string | null
+          phone: string | null
+          primary_photo_url: string | null
+          rsvp_deadline: string | null
+          rsvp_enabled: boolean
+          slug: string
+          story: string | null
+          story_am: string | null
+          template_id: string
+          updated_at: string
+          venue: string | null
+          venue_am: string | null
+          wedding_date: string
+          wedding_time: string | null
+        }
+        Insert: {
+          address?: string | null
+          address_am?: string | null
+          bride_name: string
+          bride_name_am?: string | null
+          ceremony_type?: string | null
+          created_at?: string
+          custom_message?: string | null
+          custom_message_am?: string | null
+          customization?: Json
+          email?: string | null
+          gallery_photos?: Json
+          groom_name: string
+          groom_name_am?: string | null
+          how_we_met?: string | null
+          id?: string
+          is_published?: boolean
+          maps_url?: string | null
+          phone?: string | null
+          primary_photo_url?: string | null
+          rsvp_deadline?: string | null
+          rsvp_enabled?: boolean
+          slug: string
+          story?: string | null
+          story_am?: string | null
+          template_id: string
+          updated_at?: string
+          venue?: string | null
+          venue_am?: string | null
+          wedding_date: string
+          wedding_time?: string | null
+        }
+        Update: {
+          address?: string | null
+          address_am?: string | null
+          bride_name?: string
+          bride_name_am?: string | null
+          ceremony_type?: string | null
+          created_at?: string
+          custom_message?: string | null
+          custom_message_am?: string | null
+          customization?: Json
+          email?: string | null
+          gallery_photos?: Json
+          groom_name?: string
+          groom_name_am?: string | null
+          how_we_met?: string | null
+          id?: string
+          is_published?: boolean
+          maps_url?: string | null
+          phone?: string | null
+          primary_photo_url?: string | null
+          rsvp_deadline?: string | null
+          rsvp_enabled?: boolean
+          slug?: string
+          story?: string | null
+          story_am?: string | null
+          template_id?: string
+          updated_at?: string
+          venue?: string | null
+          venue_am?: string | null
+          wedding_date?: string
+          wedding_time?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
