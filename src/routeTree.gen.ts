@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InviteSlugRouteImport } from './routes/invite/$slug'
+import { Route as TemplatesTemplateIdRouteImport } from './routes/templates/$templateId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InviteSlugRoute = InviteSlugRouteImport.update({
+  id: '/invite/$slug',
+  path: '/invite/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesTemplateIdRoute = TemplatesTemplateIdRouteImport.update({
+  id: '/templates/$templateId',
+  path: '/templates/$templateId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/invite/$slug': typeof InviteSlugRoute
+  '/templates/$templateId': typeof TemplatesTemplateIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/invite/$slug': typeof InviteSlugRoute
+  '/templates/$templateId': typeof TemplatesTemplateIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/invite/$slug': typeof InviteSlugRoute
+  '/templates/$templateId': typeof TemplatesTemplateIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/invite/$slug' | '/templates/$templateId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/invite/$slug' | '/templates/$templateId'
+  id: '__root__' | '/' | '/invite/$slug' | '/templates/$templateId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InviteSlugRoute: typeof InviteSlugRoute
+  TemplatesTemplateIdRoute: typeof TemplatesTemplateIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invite/$slug': {
+      id: '/invite/$slug'
+      path: '/invite/$slug'
+      fullPath: '/invite/$slug'
+      preLoaderRoute: typeof InviteSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates/$templateId': {
+      id: '/templates/$templateId'
+      path: '/templates/$templateId'
+      fullPath: '/templates/$templateId'
+      preLoaderRoute: typeof TemplatesTemplateIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InviteSlugRoute: InviteSlugRoute,
+  TemplatesTemplateIdRoute: TemplatesTemplateIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
