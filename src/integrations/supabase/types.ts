@@ -33,6 +33,7 @@ export type Database = {
           id: string
           is_published: boolean
           maps_url: string | null
+          music_url: string | null
           phone: string | null
           primary_photo_url: string | null
           rsvp_deadline: string | null
@@ -46,6 +47,10 @@ export type Database = {
           venue_am: string | null
           wedding_date: string
           wedding_time: string | null
+          user_id: string | null
+          is_paid: boolean
+          view_count: number
+          target_guest_count: number
         }
         Insert: {
           address?: string | null
@@ -65,6 +70,8 @@ export type Database = {
           id?: string
           is_published?: boolean
           maps_url?: string | null
+          music_url?: string | null
+
           phone?: string | null
           primary_photo_url?: string | null
           rsvp_deadline?: string | null
@@ -78,6 +85,10 @@ export type Database = {
           venue_am?: string | null
           wedding_date: string
           wedding_time?: string | null
+          user_id?: string | null
+          is_paid?: boolean
+          view_count?: number
+          target_guest_count?: number
         }
         Update: {
           address?: string | null
@@ -97,6 +108,8 @@ export type Database = {
           id?: string
           is_published?: boolean
           maps_url?: string | null
+          music_url?: string | null
+
           phone?: string | null
           primary_photo_url?: string | null
           rsvp_deadline?: string | null
@@ -110,6 +123,166 @@ export type Database = {
           venue_am?: string | null
           wedding_date?: string
           wedding_time?: string | null
+          user_id?: string | null
+          is_paid?: boolean
+          view_count?: number
+          target_guest_count?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          phone: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          phone?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          phone?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      guests: {
+        Row: {
+          id: string
+          invitation_id: string
+          share_token: string
+          name: string
+          phone: string | null
+          email: string | null
+          channel: string
+          sent_at: string | null
+          first_viewed_at: string | null
+          view_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          invitation_id: string
+          share_token: string
+          name: string
+          phone?: string | null
+          email?: string | null
+          channel?: string
+          sent_at?: string | null
+          first_viewed_at?: string | null
+          view_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          invitation_id?: string
+          share_token?: string
+          name?: string
+          phone?: string | null
+          email?: string | null
+          channel?: string
+          sent_at?: string | null
+          first_viewed_at?: string | null
+          view_count?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      rsvps: {
+        Row: {
+          id: string
+          invitation_id: string
+          guest_id: string | null
+          name: string
+          attending: boolean
+          party_size: number
+          message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          invitation_id: string
+          guest_id?: string | null
+          name: string
+          attending: boolean
+          party_size?: number
+          message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          invitation_id?: string
+          guest_id?: string | null
+          name?: string
+          attending?: boolean
+          party_size?: number
+          message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          id: string
+          user_id: string
+          invitation_id: string | null
+          template_id: string
+          tx_ref: string
+          chapa_ref_id: string | null
+          amount: number
+          currency: string
+          status: string
+          mode: string | null
+          fulfilled_at: string | null
+          raw_payload: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          invitation_id?: string | null
+          template_id: string
+          tx_ref: string
+          chapa_ref_id?: string | null
+          amount: number
+          currency?: string
+          status?: string
+          mode?: string | null
+          fulfilled_at?: string | null
+          raw_payload?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          invitation_id?: string | null
+          template_id?: string
+          tx_ref?: string
+          chapa_ref_id?: string | null
+          amount?: number
+          currency?: string
+          status?: string
+          mode?: string | null
+          fulfilled_at?: string | null
+          raw_payload?: Json | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

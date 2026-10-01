@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -121,6 +122,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {/* Required: without this, every toast.error()/toast.success() in the app
+          is silently dropped and failures look like buttons doing nothing. */}
+      <Toaster position="top-center" richColors closeButton />
     </QueryClientProvider>
   );
 }

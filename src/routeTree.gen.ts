@@ -10,13 +10,35 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as CreateTemplateIdRouteImport } from './routes/create/$templateId'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as InviteSlugRouteImport } from './routes/invite/$slug'
+import { Route as PayCallbackRouteImport } from './routes/pay/callback'
 import { Route as TemplatesTemplateIdRouteImport } from './routes/templates/$templateId'
+import { Route as ApiChapaWebhookRouteImport } from './routes/api/chapa/webhook'
+import { Route as DashboardInvitationsInvitationIdRouteImport } from './routes/dashboard/invitations/$invitationId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateTemplateIdRoute = CreateTemplateIdRouteImport.update({
@@ -24,9 +46,19 @@ const CreateTemplateIdRoute = CreateTemplateIdRouteImport.update({
   path: '/create/$templateId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InviteSlugRoute = InviteSlugRouteImport.update({
   id: '/invite/$slug',
   path: '/invite/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayCallbackRoute = PayCallbackRouteImport.update({
+  id: '/pay/callback',
+  path: '/pay/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TemplatesTemplateIdRoute = TemplatesTemplateIdRouteImport.update({
@@ -34,45 +66,112 @@ const TemplatesTemplateIdRoute = TemplatesTemplateIdRouteImport.update({
   path: '/templates/$templateId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChapaWebhookRoute = ApiChapaWebhookRouteImport.update({
+  id: '/api/chapa/webhook',
+  path: '/api/chapa/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardInvitationsInvitationIdRoute =
+  DashboardInvitationsInvitationIdRouteImport.update({
+    id: '/dashboard/invitations/$invitationId',
+    path: '/dashboard/invitations/$invitationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/create/$templateId': typeof CreateTemplateIdRoute
   '/invite/$slug': typeof InviteSlugRoute
+  '/pay/callback': typeof PayCallbackRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/api/chapa/webhook': typeof ApiChapaWebhookRoute
+  '/dashboard/invitations/$invitationId': typeof DashboardInvitationsInvitationIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/create/$templateId': typeof CreateTemplateIdRoute
   '/invite/$slug': typeof InviteSlugRoute
+  '/pay/callback': typeof PayCallbackRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/api/chapa/webhook': typeof ApiChapaWebhookRoute
+  '/dashboard/invitations/$invitationId': typeof DashboardInvitationsInvitationIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/create/$templateId': typeof CreateTemplateIdRoute
   '/invite/$slug': typeof InviteSlugRoute
+  '/pay/callback': typeof PayCallbackRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/api/chapa/webhook': typeof ApiChapaWebhookRoute
+  '/dashboard/invitations/$invitationId': typeof DashboardInvitationsInvitationIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/create/$templateId' | '/invite/$slug' | '/templates/$templateId'
+    | '/'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
+    | '/create/$templateId'
+    | '/invite/$slug'
+    | '/pay/callback'
+    | '/templates/$templateId'
+    | '/dashboard/'
+    | '/api/chapa/webhook'
+    | '/dashboard/invitations/$invitationId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/create/$templateId' | '/invite/$slug' | '/templates/$templateId'
+  to:
+    | '/'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
+    | '/create/$templateId'
+    | '/invite/$slug'
+    | '/pay/callback'
+    | '/templates/$templateId'
+    | '/dashboard'
+    | '/api/chapa/webhook'
+    | '/dashboard/invitations/$invitationId'
   id:
     | '__root__'
     | '/'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/create/$templateId'
     | '/invite/$slug'
+    | '/pay/callback'
     | '/templates/$templateId'
+    | '/dashboard/'
+    | '/api/chapa/webhook'
+    | '/dashboard/invitations/$invitationId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
   CreateTemplateIdRoute: typeof CreateTemplateIdRoute
   InviteSlugRoute: typeof InviteSlugRoute
+  PayCallbackRoute: typeof PayCallbackRoute
   TemplatesTemplateIdRoute: typeof TemplatesTemplateIdRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  ApiChapaWebhookRoute: typeof ApiChapaWebhookRoute
+  DashboardInvitationsInvitationIdRoute: typeof DashboardInvitationsInvitationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -84,11 +183,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/create/$templateId': {
       id: '/create/$templateId'
       path: '/create/$templateId'
       fullPath: '/create/$templateId'
       preLoaderRoute: typeof CreateTemplateIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$slug': {
@@ -98,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pay/callback': {
+      id: '/pay/callback'
+      path: '/pay/callback'
+      fullPath: '/pay/callback'
+      preLoaderRoute: typeof PayCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/templates/$templateId': {
       id: '/templates/$templateId'
       path: '/templates/$templateId'
@@ -105,14 +239,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TemplatesTemplateIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chapa/webhook': {
+      id: '/api/chapa/webhook'
+      path: '/api/chapa/webhook'
+      fullPath: '/api/chapa/webhook'
+      preLoaderRoute: typeof ApiChapaWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/invitations/$invitationId': {
+      id: '/dashboard/invitations/$invitationId'
+      path: '/dashboard/invitations/$invitationId'
+      fullPath: '/dashboard/invitations/$invitationId'
+      preLoaderRoute: typeof DashboardInvitationsInvitationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
   CreateTemplateIdRoute: CreateTemplateIdRoute,
   InviteSlugRoute: InviteSlugRoute,
+  PayCallbackRoute: PayCallbackRoute,
   TemplatesTemplateIdRoute: TemplatesTemplateIdRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+  ApiChapaWebhookRoute: ApiChapaWebhookRoute,
+  DashboardInvitationsInvitationIdRoute: DashboardInvitationsInvitationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

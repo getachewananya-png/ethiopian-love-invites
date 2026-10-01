@@ -38,7 +38,13 @@ function createSupabaseAdminClient() {
       ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
       ...(!SUPABASE_SERVICE_ROLE_KEY ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+    // The old wording ("Connect Supabase in Lovable Cloud") sent people to the
+    // wrong dashboard when running locally. Name the exact variable and source.
+    const message = `Missing server env var(s): ${missing.join(', ')}. ` +
+      `Add ${missing.length === 1 ? 'it' : 'them'} to your .env file, then restart the dev server. ` +
+      `SUPABASE_SERVICE_ROLE_KEY is the "service_role" key from Supabase Dashboard -> Project Settings -> API (Reveal). ` +
+      `It is server-only: never prefix it with VITE_, or it will be exposed to the browser. ` +
+      `See .env.example for the full list.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }

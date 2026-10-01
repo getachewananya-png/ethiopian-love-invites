@@ -15,6 +15,13 @@
       "when": 1790246966688,
       "tag": "0001_secure_wedding_image_uploads",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790247000000,
+      "tag": "0002_accounts_payments_analytics",
+      "breakpoints": true
     }
   ]
 }

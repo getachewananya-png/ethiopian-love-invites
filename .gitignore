@@ -7,6 +7,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Environment variables -- NEVER commit these.
+# .env holds SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS and would let
+# anyone who reads the repo read and write every row in the database.
+.env
+.env.*
+!.env.example
+
+# Local dev-server logs. These capture terminal output, which can include
+# project URLs and internal error traces.
+devout*.txt
+devout*.log
+
 node_modules
 dist
 dist-ssr
