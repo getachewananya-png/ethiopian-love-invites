@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signUp } from "@/lib/auth";
+import { EMAIL_CONFIRMATION_ENABLED, signUp } from "@/lib/auth";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>) => ({ redirect: typeof search["redirect"] === "string" ? search["redirect"] : "" }),
@@ -33,10 +33,19 @@ function SignupPage() {
     setBusy(true);
     try {
       const { needsConfirmation } = await signUp(form.email, form.password, form.fullName, form.phone);
+      // Safety net rather than the normal path. Email confirmation is off, so
+      // signUp hands back a session and we drop straight into the dashboard.
+      // Reaching this means the project setting and EMAIL_CONFIRMATION_ENABLED
+      // have drifted apart, so word it for whichever one is actually in force
+      // and send the user to sign in.
       if (needsConfirmation) {
-        toast.success("Check your email to confirm your account, then sign in.");
+        toast.info(
+          EMAIL_CONFIRMATION_ENABLED
+            ? "Check your email to confirm your account, then sign in."
+            : "Your account was created, but we could not sign you in. Please sign in.",
+        );
         // Keep the redirect so the user lands back on the builder they left,
-        // with their draft still intact, after they confirm and sign in.
+        // with their draft still intact, after they sign in.
         await navigate({ to: "/login", search: { redirect } });
         return;
       }

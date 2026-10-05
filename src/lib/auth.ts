@@ -43,6 +43,21 @@ export function useAuth(): AuthState {
 }
 
 /**
+ * Whether this project asks new accounts to confirm their email before they can
+ * sign in.
+ *
+ * The switch that actually matters is server-side: Supabase -> Authentication ->
+ * Sign In / Providers -> Email -> "Confirm email". That is what decides whether
+ * a new account gets a session immediately. This constant only picks the
+ * wording we show, so we never send someone to an inbox for a link the project
+ * is not sending.
+ *
+ * It is OFF at the moment. `scripts/set-email-confirmation.mjs` flips the project
+ * setting from the command line -- keep the two in step when changing it.
+ */
+export const EMAIL_CONFIRMATION_ENABLED = false;
+
+/**
  * Supabase returns 400 for "Invalid login credentials" when the email is wrong,
  * the password is wrong, OR the account exists but was never confirmed. It
  * deliberately does not say which, to avoid leaking whether an email is
@@ -50,7 +65,9 @@ export function useAuth(): AuthState {
  */
 function friendlySignInError(message: string): string {
   if (/invalid login credentials/i.test(message)) {
-    return "That email and password do not match. If you just created an account, confirm your email first, then sign in.";
+    return EMAIL_CONFIRMATION_ENABLED
+      ? "That email and password do not match. If you just created an account, confirm your email first, then sign in."
+      : "That email and password do not match. Check the address and password, or reset your password.";
   }
   if (/email not confirmed/i.test(message)) {
     return "Please confirm your email address first — check your inbox for the link we sent.";
@@ -84,7 +101,10 @@ export async function signUp(email: string, password: string, fullName: string, 
     options: { data: { full_name: fullName, phone } },
   });
   if (error) throw new Error(error.message);
-  // When email confirmation is enabled Supabase returns a user but no session.
+  // With email confirmation off, Supabase returns a session straight away and
+  // the caller can continue into the dashboard. With it on, the user comes back
+  // but there is no session until they click the emailed link -- so this is how
+  // the signup page knows to send them to sign in first.
   return { needsConfirmation: !data.session };
 }
 

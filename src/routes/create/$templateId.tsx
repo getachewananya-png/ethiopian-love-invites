@@ -107,15 +107,16 @@ function Builder() {
     return step;
   };
   // `publishInvitation` is server-guarded by requireSupabaseAuth, so an
-  // anonymous visitor must be sent to sign in BEFORE we call it. Checking
+  // anonymous visitor must be sent to sign up BEFORE we call it. Checking
   // afterwards meant the server threw "Unauthorized" first and the user only
-  // ever saw a generic "could not be created" failure.
+  // ever saw a generic "could not be created" failure. The redirect carries the
+  // builder back so the draft (kept in localStorage) is still waiting for them.
   const publish=async()=>{
     if(authLoading){ toast.error("Checking your session — please try again."); return; }
     // Client-side guard. The server schema is the real enforcement, but catching
     // it here saves a round trip and tells the user exactly what is missing.
     if(missingOverall.length){ toast.error(`Please add: ${missingOverall.slice(0,4).join(", ")}${missingOverall.length>4?"…":""}`); setStep(firstStepWithMissing()); return; }
-    if(!user){ navigate({to:"/login",search:{redirect:`/create/${id}`}}); toast.error("Create an account to generate your invitation."); return; }
+    if(!user){ navigate({to:"/signup",search:{redirect:`/create/${id}`}}); toast.error("Create an account to generate your invitation."); return; }
     setSaving(true);
     try{
       const result=await publishInvitation({data});
