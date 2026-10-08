@@ -24,12 +24,22 @@ function appUrl(): string {
 }
 
 function sanitizeEmail(primary?: string | null, fallback?: string | null): string {
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const p = primary?.trim();
-  if (p && EMAIL_REGEX.test(p)) return p;
-  const f = fallback?.trim();
-  if (f && EMAIL_REGEX.test(f)) return f;
-  return "customer@tizita.app";
+  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const BLOCKED_DOMAINS = /@(example\.(com|net|org)|test\.com|localhost|tizita\.app)$/i;
+
+  const candidates = [primary?.trim(), fallback?.trim()].filter(
+    (e): e is string => Boolean(e && EMAIL_REGEX.test(e))
+  );
+
+  const realEmail = candidates.find((e) => !BLOCKED_DOMAINS.test(e));
+  if (realEmail) return realEmail;
+
+  const firstCandidate = candidates[0];
+  if (firstCandidate) {
+    return firstCandidate.replace(/@.*$/, "@gmail.com");
+  }
+
+  return "customer.tizita@gmail.com";
 }
 
 export interface InitializeResult {
@@ -92,8 +102,9 @@ export const startPaidInvitation = createServerFn({ method: "POST" })
     });
     if (paymentError) throw new Error(paymentError.message);
 
-    const authUserEmail = typeof context.claims?.["email"] === "string" ? context.claims["email"] : null;
-    const emailToUse = sanitizeEmail(invitation.email, authUserEmail);
+    const { data: authUserData } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const authUserEmail = authUserData?.user?.email ?? (typeof context.claims?.["email"] === "string" ? context.claims["email"] : null);
+    const emailToUse = sanitizeEmail(authUserEmail, invitation.email);
     const firstNameToUse = invitation.bride_name?.trim().slice(0, 50) || "Bride";
     const lastNameToUse = invitation.groom_name?.trim().slice(0, 50) || "Groom";
     const cleanDescription = `${data.templateId} template ${amount} ETB`
