@@ -23,6 +23,15 @@ function appUrl(): string {
   return url;
 }
 
+function sanitizeEmail(primary?: string | null, fallback?: string | null): string {
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const p = primary?.trim();
+  if (p && EMAIL_REGEX.test(p)) return p;
+  const f = fallback?.trim();
+  if (f && EMAIL_REGEX.test(f)) return f;
+  return "customer@tizita.app";
+}
+
 export interface InitializeResult {
   txRef: string;
   checkoutUrl: string;
@@ -83,21 +92,30 @@ export const startPaidInvitation = createServerFn({ method: "POST" })
     });
     if (paymentError) throw new Error(paymentError.message);
 
+    const authUserEmail = typeof context.claims?.["email"] === "string" ? context.claims["email"] : null;
+    const emailToUse = sanitizeEmail(invitation.email, authUserEmail);
+    const firstNameToUse = invitation.bride_name?.trim().slice(0, 50) || "Bride";
+    const lastNameToUse = invitation.groom_name?.trim().slice(0, 50) || "Groom";
+    const cleanDescription = `${data.templateId} template ${amount} ETB`
+      .replace(/[^a-zA-Z0-9_\-\.\s]/g, "")
+      .trim()
+      .slice(0, 100);
+
     const response = await fetch(`${CHAPA_API_BASE}/transaction/initialize`, {
       method: "POST",
       headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         amount: String(amount),
         currency: "ETB",
-        email: invitation.email || "guest@tizita.app",
-        first_name: invitation.bride_name,
-        last_name: invitation.groom_name,
+        email: emailToUse,
+        first_name: firstNameToUse,
+        last_name: lastNameToUse,
         tx_ref: txRef,
         return_url: `${base}/pay/callback?tx_ref=${encodeURIComponent(txRef)}`,
         callback_url: `${base}/api/chapa/webhook`,
         customization: {
-          title: "Tizita Wedding Invitation",
-          description: `${data.templateId} template — ${formatEtb(amount)}`,
+          title: "Tizita Invites",
+          description: cleanDescription,
         },
         meta: {
           invitation_id: invitation.id,
@@ -114,7 +132,22 @@ export const startPaidInvitation = createServerFn({ method: "POST" })
         message = payload.message;
       } else if (payload?.message && typeof payload.message === "object") {
         try {
-          message = JSON.stringify(payload.message);
+          const errObj = payload.message as Record<string, unknown>;
+          const details = Object.entries(errObj)
+            .map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(", ") : String(errs)}`)
+            .join("; ");
+          message = details || JSON.stringify(payload.message);
+        } catch {
+          /* ignore */
+        }
+      } else if (payload && typeof payload === "object") {
+        try {
+          const rootObj = (payload as unknown) as Record<string, unknown>;
+          const details = Object.entries(rootObj)
+            .filter(([k]) => k !== "status" && k !== "data")
+            .map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(", ") : String(errs)}`)
+            .join("; ");
+          if (details) message = details;
         } catch {
           /* ignore */
         }
