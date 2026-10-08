@@ -5,6 +5,7 @@ import royalPhoto from "@/assets/royal-couple.jpg";
 import addisPhoto from "@/assets/addis-couple.jpg";
 import romancePhoto from "@/assets/romance-couple.jpg";
 import charlesPhoto from "@/assets/charles-nicolle-photo.jpg";
+import oliviaPhoto from "@/assets/olivia-ethan-photo.jpg";
 import { Button } from "@/components/ui/button";
 import { AuthActions } from "@/components/AuthActions";
 import { isPaidTemplate, TEMPLATE_PRICE_ETB, formatEtb } from "@/lib/plans";
@@ -22,8 +23,8 @@ export const Route = createFileRoute("/")({
 
 type Language = "en" | "am";
 const copy = {
-  en: { navTemplates: "Templates", navHow: "How it works", navCreate: "Create yours", eyebrow: "Digital invitations, thoughtfully Ethiopian", titleA: "Your Love Story.", titleB: "Beautifully Invited.", intro: "Create a stunning digital wedding invitation in minutes. Choose a design, add your story and photos, and share your special day with everyone you love.", primary: "Create Your Invitation", secondary: "Explore Templates", choose: "Choose Your Love Story", chooseSub: "Three unique designs. One unforgettable day.", preview: "Preview", use: "Choose this design", how: "How It Works", benefits: "Why Digital Invitations?", made: "Made for Ethiopian Weddings", final: "Your Wedding Deserves More Than a Message.", finalSub: "Create an invitation your guests will remember." },
-  am: { navTemplates: "ዲዛይኖች", navHow: "እንዴት ይሰራል", navCreate: "ይፍጠሩ", eyebrow: "በኢትዮጵያዊ ስሜት የተዘጋጁ ዲጂታል ግብዣዎች", titleA: "የፍቅር ታሪክዎን", titleB: "በውብ ግብዣ ያካፍሉ።", intro: "የሰርግ ግብዣዎን በጥቂት ደቂቃዎች ይፍጠሩ። የሚወዱትን ዲዛይን ይምረጡ፣ የግብዣዎን መረጃ እና ፎቶዎች ያክሉ፣ ከዚያም ልዩ ሊንኩን ያጋሩ።", primary: "ግብዣዎን ይፍጠሩ", secondary: "ዲዛይኖችን ይመልከቱ", choose: "የፍቅር ታሪክዎን ይምረጡ", chooseSub: "ሦስት ልዩ ዲዛይኖች። አንድ የማይረሳ ቀን።", preview: "ይመልከቱ", use: "ይህን ዲዛይን ይምረጡ", how: "እንዴት ይሰራል", benefits: "ዲጂታል ግብዣ ለምን?", made: "ለኢትዮጵያ ሰርግ የተሰራ", final: "ሰርግዎ ከመልእክት በላይ ይገባዋል።", finalSub: "እንግዶችዎ የማይረሱትን ግብዣ ይፍጠሩ።" },
+  en: { navTemplates: "Templates", navHow: "How it works", navCreate: "Create yours", eyebrow: "Digital invitations, thoughtfully Ethiopian", titleA: "Your Love Story.", titleB: "Beautifully Invited.", intro: "Create a stunning digital wedding invitation in minutes. Choose a design, add your story and photos, and share your special day with everyone you love.", primary: "Create Your Invitation", secondary: "Explore Templates", choose: "Choose Your Love Story", chooseSub: "Eight unique designs. One unforgettable day.", preview: "Preview", use: "Choose this design", how: "How It Works", benefits: "Why Digital Invitations?", made: "Made for Ethiopian Weddings", final: "Your Wedding Deserves More Than a Message.", finalSub: "Create an invitation your guests will remember." },
+  am: { navTemplates: "ዲዛይኖች", navHow: "እንዴት ይሰራል", navCreate: "ይፍጠሩ", eyebrow: "በኢትዮጵያዊ ስሜት የተዘጋጁ ዲጂታል ግብዣዎች", titleA: "የፍቅር ታሪክዎን", titleB: "በውብ ግብዣ ያካፍሉ።", intro: "የሰርግ ግብዣዎን በጥቂት ደቂቃዎች ይፍጠሩ። የሚወዱትን ዲዛይን ይምረጡ፣ የግብዣዎን መረጃ እና ፎቶዎች ያክሉ፣ ከዚያም ልዩ ሊንኩን ያጋሩ።", primary: "ግብዣዎን ይፍጠሩ", secondary: "ዲዛይኖችን ይመልከቱ", choose: "የፍቅር ታሪክዎን ይምረጡ", chooseSub: "ስምንት ልዩ ዲዛይኖች። አንድ የማይረሳ ቀን።", preview: "ይመልከቱ", use: "ይህን ዲዛይን ይምረጡ", how: "እንዴት ይሰራል", benefits: "ዲጂታል ግብዣ ለምን?", made: "ለኢትዮጵያ ሰርግ የተሰራ", final: "ሰርግዎ ከመልእክት በላይ ይገባዋል።", finalSub: "እንግዶችዎ የማይረሱትን ግብዣ ይፍጠሩ።" },
 };
 const templates: { id: TemplateId; name: string; tag: string; description: string; image: string; className: string }[] = [
   { id: "royal-tewahedo", name: "Royal Tewahedo", tag: "Sacred · Regal · Timeless", description: "A ceremonial study in deep burgundy, antique gold, and quiet reverence.", image: royalPhoto, className: "showcase-royal" },
@@ -32,6 +33,8 @@ const templates: { id: TemplateId; name: string; tag: string; description: strin
   { id: "lalibela-stone", name: "Lalibela Stone", tag: "Ancient · Sacred · Enduring", description: "Rock-hewn arches and warm ochre, for a love carved to last.", image: royalPhoto, className: "showcase-lalibela" },
   { id: "buna-coffee", name: "Buna & Blessings", tag: "Warm · Traditional · Generous", description: "The warmth of the coffee ceremony, poured into an intimate invitation.", image: addisPhoto, className: "showcase-buna" },
   { id: "wonderland", name: "Wonderland", tag: "Ornate · Framed · Printable", description: "An ornate printed keepsake, framed in gold filigree with a portrait up top.", image: charlesPhoto, className: "showcase-wonderland" },
+  { id: "traditional", name: "Traditional", tag: "Tibeb · Stepped Cross · Ceremonial", description: "Woven tibeb borders, a stepped church cross, and the coffee ceremony, as printed in the market.", image: charlesPhoto, className: "showcase-traditional" },
+  { id: "olivia-ethan", name: "Olivia & Ethan", tag: "Garden Arch · Leaf Motifs · Refined", description: "A refined garden arch layout with leaf corner motifs and classic typography.", image: oliviaPhoto, className: "showcase-olivia" },
 ];
 const priceTag = (id: TemplateId) => isPaidTemplate(id) ? `${formatEtb(TEMPLATE_PRICE_ETB[id])} · Premium` : "Free";
 
