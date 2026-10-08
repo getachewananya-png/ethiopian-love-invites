@@ -1304,3 +1304,47 @@ label.field textarea.large,
   transform: translateY(-2px);
   box-shadow: 0 8px 20px -4px oklch(0 0 0 / 0.15);
 }
+
+/* ===== FLY-IN AND FLY-OUT SCROLL MOTION ===== */
+.reveal-on [data-fly] {
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.75s ease;
+  will-change: opacity, transform, filter;
+}
+
+.reveal-on [data-fly="left"] {
+  opacity: 0;
+  transform: translateX(-3.5rem);
+  filter: blur(5px);
+}
+
+.reveal-on [data-fly="right"] {
+  opacity: 0;
+  transform: translateX(3.5rem);
+  filter: blur(5px);
+}
+
+.reveal-on [data-fly="up"] {
+  opacity: 0;
+  transform: translateY(3rem);
+  filter: blur(5px);
+}
+
+.reveal-on [data-fly="down"] {
+  opacity: 0;
+  transform: translateY(-3rem);
+  filter: blur(5px);
+}
+
+.reveal-on [data-fly="zoom"] {
+  opacity: 0;
+  transform: scale(0.88) translateY(1.5rem);
+  filter: blur(6px);
+}
+
+.reveal-on [data-fly].is-revealed {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}

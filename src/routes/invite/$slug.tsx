@@ -75,12 +75,10 @@ function PublicInvitation() {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          entry.target.classList.add("is-revealed");
-          observer.unobserve(entry.target);
+          entry.target.classList.toggle("is-revealed", entry.isIntersecting);
         }
       },
-      { rootMargin: "0px 0px -12% 0px", threshold: 0.08 },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
     );
     for (const node of nodes) observer.observe(node);
 

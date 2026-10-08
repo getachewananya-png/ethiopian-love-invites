@@ -786,20 +786,20 @@ function OliviaEthanTemplate({
           <img src={hero} alt={`${i.brideName} and ${i.groomName}`} />
         </div>
         <div className="oe-text">
-          <p className="oe-script">{lang === "am" ? "አብረው" : "together"}</p>
-          <p className="oe-small">{lang === "am" ? "ከቤተሰቦቻቸው ጋር" : "WITH THEIR FAMILIES"}</p>
-          <h1 className="oe-name">{first}</h1>
-          <div className="oe-and">
+          <p className="oe-script" data-reveal data-fly="up">{lang === "am" ? "አብረው" : "together"}</p>
+          <p className="oe-small" data-reveal data-fly="up">{lang === "am" ? "ከቤተሰቦቻቸው ጋር" : "WITH THEIR FAMILIES"}</p>
+          <h1 className="oe-name" data-reveal data-fly="left">{first}</h1>
+          <div className="oe-and" data-reveal data-fly="zoom">
             <span className="oe-rule" />
             <span className="oe-script">{lang === "am" ? "እና" : "and"}</span>
             <span className="oe-rule" />
           </div>
-          <h1 className="oe-name">{second}</h1>
-          <p className="oe-small oe-invite">
+          <h1 className="oe-name" data-reveal data-fly="right">{second}</h1>
+          <p className="oe-small oe-invite" data-reveal data-fly="up">
             {lang === "am" ? "የጋብቻቸውን በዓል እንድታከብሩ" : "JOYFULLY INVITE YOU TO"}<br />
             {lang === "am" ? "በደስታ ይጋብዙዎታል" : "CELEBRATE THEIR WEDDING"}
           </p>
-          <div className="oe-date">
+          <div className="oe-date" data-reveal data-fly="zoom">
             <span className="oe-side">{dayOfWeek}</span>
             <span className="oe-day">
               <b>{dayNum}</b>
@@ -807,11 +807,11 @@ function OliviaEthanTemplate({
             </span>
             <span className="oe-side">{yearNum}</span>
           </div>
-          {i.weddingTime && <p className="oe-script">{i.weddingTime}</p>}
+          {i.weddingTime && <p className="oe-script" data-reveal data-fly="up">{i.weddingTime}</p>}
           <p className="oe-heart">♥</p>
-          <p className="oe-venue">{venueStr}</p>
-          <p className="oe-small">{addressStr}</p>
-          <p className="oe-script oe-reception">{lang === "am" ? "ምግብና መስተንግዶ ይከተላል" : "reception to follow"}</p>
+          <p className="oe-venue" data-reveal data-fly="up">{venueStr}</p>
+          <p className="oe-small" data-reveal data-fly="up">{addressStr}</p>
+          <p className="oe-script oe-reception" data-reveal data-fly="up">{lang === "am" ? "ምግብና መስተንግዶ ይከተላል" : "reception to follow"}</p>
         </div>
       </article>
 
