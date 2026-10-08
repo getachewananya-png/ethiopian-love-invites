@@ -1215,3 +1215,92 @@ label.field textarea.large,
   padding: 32px 24px;
   box-shadow: 0 12px 35px oklch(0.3 0.02 75 / 10%);
 }
+
+/* ===== ANIMATIONS FOR TEMPLATES ===== */
+@keyframes heart-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.28); }
+}
+
+@keyframes oe-leaf-top-in {
+  from { opacity: 0; transform: translate(-30px, -30px) rotate(-12deg) scale(0.9); }
+  to { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes oe-leaf-bottom-in {
+  from { opacity: 0; transform: translate(30px, 30px) rotate(12deg) scale(0.9); }
+  to { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes oe-arch-in {
+  from { opacity: 0; transform: scale(0.93) translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes oe-text-blur-in {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes oe-leaf-sway-top {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(6px) rotate(2deg); }
+}
+
+@keyframes oe-leaf-sway-bottom {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(-2deg); }
+}
+
+.oe-heart {
+  display: inline-block;
+  animation: heart-pulse 2.2s ease-in-out infinite;
+}
+
+.oe-leaf--top {
+  animation: oe-leaf-sway-top 8s ease-in-out infinite;
+  transform-origin: top left;
+}
+
+.oe-leaf--bottom {
+  animation: oe-leaf-sway-bottom 9s ease-in-out infinite;
+  transform-origin: bottom right;
+}
+
+.reveal-on .oe-card .oe-leaf--top {
+  animation: oe-leaf-top-in 1s cubic-bezier(0.22, 1, 0.36, 1) both, oe-leaf-sway-top 8s ease-in-out 1s infinite;
+}
+
+.reveal-on .oe-card .oe-leaf--bottom {
+  animation: oe-leaf-bottom-in 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both, oe-leaf-sway-bottom 9s ease-in-out 1.2s infinite;
+}
+
+.reveal-on .oe-card .oe-arch {
+  animation: oe-arch-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+.reveal-on .oe-card .oe-name {
+  animation: oe-text-blur-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+
+.reveal-on .oe-card .oe-script {
+  animation: oe-text-blur-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+
+/* Gallery image zoom micro-animation */
+.invite-gallery img {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s ease;
+}
+.invite-gallery img:hover {
+  transform: scale(1.05) translateY(-4px);
+  box-shadow: 0 16px 32px -8px oklch(0 0 0 / 0.3);
+}
+
+/* Action button subtle hover lift */
+.invitation-actions button {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+}
+.invitation-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px oklch(0 0 0 / 0.15);
+}
