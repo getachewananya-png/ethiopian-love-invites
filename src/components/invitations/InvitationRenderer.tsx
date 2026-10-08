@@ -3,6 +3,9 @@ import royalPhoto from "@/assets/royal-couple.jpg";
 import addisPhoto from "@/assets/addis-couple.jpg";
 import romancePhoto from "@/assets/romance-couple.jpg";
 import charlesPhoto from "@/assets/charles-nicolle-photo.jpg";
+import oliviaPhoto from "@/assets/olivia-ethan-photo.jpg";
+import leafTop from "@/assets/leaf-corner-top.png";
+import leafBottom from "@/assets/leaf-corner-bottom.png";
 import upperFrame from "@/assets/invitation-upper-left.png";
 import lowerFrame from "@/assets/invitation-lower-right.png";
 import {
@@ -28,6 +31,7 @@ const fallbackPhotos: Record<TemplateId, string> = {
   "buna-coffee": addisPhoto,
   wonderland: charlesPhoto,
   traditional: charlesPhoto,
+  "olivia-ethan": oliviaPhoto,
 };
 
 export interface InvitationRendererProps {
@@ -54,6 +58,7 @@ export function InvitationRenderer({
   if (invitation.templateId === "lalibela-stone") return <Lalibela {...shared} />;
   if (invitation.templateId === "buna-coffee") return <Buna {...shared} />;
   if (invitation.templateId === "wonderland") return <Wonderland {...shared} />;
+  if (invitation.templateId === "olivia-ethan") return <OliviaEthanTemplate {...shared} />;
   return <Royal {...shared} />;
 }
 
@@ -731,5 +736,75 @@ function MapSection({
         <MapPin /> {label}
       </a>
     </div>
+  );
+}
+
+function OliviaEthanTemplate({
+  invitation: i,
+  hero,
+  compact,
+  slug,
+  token,
+  lang = "am",
+  onLangChange,
+}: InvitationRendererProps & { hero: string; compact: boolean }) {
+  const t = inviteCopy[lang];
+  const first = (lang === "am" ? i.brideNameAm || i.brideName : i.brideName).toUpperCase();
+  const second = (lang === "am" ? i.groomNameAm || i.groomName : i.groomName).toUpperCase();
+  const venueStr = (localized(lang === "am" ? i.venueAm : i.venue, lang === "am" ? i.venue : i.venueAm) || "THE GARDEN VALLEY HOTEL").toUpperCase();
+  const addressStr = (localized(lang === "am" ? i.addressAm : i.address, lang === "am" ? i.address : i.addressAm) || "NAPA VALLEY, CALIFORNIA").toUpperCase();
+
+  const d = i.weddingDate ? new Date(`${i.weddingDate}T12:00:00`) : new Date(2025, 7, 24);
+  const dayNum = d.getDate();
+  const monthName = d.toLocaleString(lang === "am" ? "am-ET" : "en-US", { month: "long" }).toUpperCase();
+  const dayOfWeek = d.toLocaleString(lang === "am" ? "am-ET" : "en-US", { weekday: "long" }).toUpperCase();
+  const yearNum = d.getFullYear();
+
+  return (
+    <main className={`oe-page ${compact ? "invite-compact" : ""}`}>
+      {!compact && <LangToggle lang={lang} onLangChange={onLangChange} />}
+      <article className="oe-card">
+        <img className="oe-leaf oe-leaf--top" src={leafTop} alt="" aria-hidden="true" />
+        <img className="oe-leaf oe-leaf--bottom" src={leafBottom} alt="" aria-hidden="true" />
+        <div className="oe-arch">
+          <img src={hero} alt={`${i.brideName} and ${i.groomName}`} />
+        </div>
+        <div className="oe-text">
+          <p className="oe-script">{lang === "am" ? "አብረው" : "together"}</p>
+          <p className="oe-small">{lang === "am" ? "ከቤተሰቦቻቸው ጋር" : "WITH THEIR FAMILIES"}</p>
+          <h1 className="oe-name">{first}</h1>
+          <div className="oe-and">
+            <span className="oe-rule" />
+            <span className="oe-script">{lang === "am" ? "እና" : "and"}</span>
+            <span className="oe-rule" />
+          </div>
+          <h1 className="oe-name">{second}</h1>
+          <p className="oe-small oe-invite">
+            {lang === "am" ? "የጋብቻቸውን በዓል እንድታከብሩ" : "JOYFULLY INVITE YOU TO"}<br />
+            {lang === "am" ? "በደስታ ይጋብዙዎታል" : "CELEBRATE THEIR WEDDING"}
+          </p>
+          <div className="oe-date">
+            <span className="oe-side">{dayOfWeek}</span>
+            <span className="oe-day">
+              <b>{dayNum}</b>
+              <small>{monthName}</small>
+            </span>
+            <span className="oe-side">{yearNum}</span>
+          </div>
+          {i.weddingTime && <p className="oe-script">{i.weddingTime}</p>}
+          <p className="oe-heart">♥</p>
+          <p className="oe-venue">{venueStr}</p>
+          <p className="oe-small">{addressStr}</p>
+          <p className="oe-script oe-reception">{lang === "am" ? "ምግብና መስተንግዶ ይከተላል" : "reception to follow"}</p>
+        </div>
+      </article>
+
+      {slug && i.rsvpEnabled ? (
+        <div className="rsvp-block" style={{ maxWidth: "760px", margin: "24px auto 0" }}>
+          <RsvpForm slug={slug} token={token} amharic={lang === "am"} />
+        </div>
+      ) : null}
+      <BackgroundMusic url={i.musicUrl} />
+    </main>
   );
 }

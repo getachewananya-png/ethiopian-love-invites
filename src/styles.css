@@ -1165,3 +1165,45 @@ label.field textarea.large,
 .tier-badge { display: inline-flex; align-items: center; padding: 0.1875rem 0.5625rem; border-radius: 999px; font-size: 0.6875rem; font-style: normal; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .tier-badge.paid { background: oklch(0.94 0.05 80); color: oklch(0.4 0.1 60); }
 .tier-badge.free { background: oklch(0.94 0.04 150); color: oklch(0.4 0.09 150); }
+
+/* Olivia & Ethan invitation */
+.oe-page { min-height: 100vh; padding: 32px 16px; background: var(--background); }
+.oe-card {
+  position: relative; overflow: hidden; isolation: isolate;
+  width: min(100%, 760px); aspect-ratio: 2 / 3; margin: 0 auto;
+  display: grid; grid-template-columns: 48% 1fr;
+  background: var(--card); color: var(--foreground);
+  box-shadow: 0 16px 45px oklch(0.3 0.02 75 / 15%);
+}
+.oe-card::after { content: ""; position: absolute; inset: 12px; border: 1px solid var(--border); opacity: .5; pointer-events: none; }
+.oe-leaf { position: absolute; z-index: 3; pointer-events: none; mix-blend-mode: multiply; }
+.oe-leaf--top { top: 0; left: 0; width: 34%; }
+.oe-leaf--bottom { right: 0; bottom: 0; width: 26%; }
+.oe-arch {
+  position: relative; margin: 60px 0 0; border-radius: 0 999px 0 0 / 0 220px 0 0;
+  overflow: hidden; border-right: 2px solid var(--primary); border-top: 2px solid var(--primary);
+}
+.oe-arch img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+.oe-text { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 28px; gap: 6px; }
+.oe-script { font-family: "Great Vibes", cursive; font-size: 34px; color: var(--muted-foreground); margin: 0; line-height: 1.1; }
+.oe-small { font-family: Montserrat, sans-serif; font-size: 13px; letter-spacing: .18em; margin: 0; line-height: 1.7; }
+.oe-name { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: clamp(36px, 7vw, 62px); letter-spacing: .06em; margin: 0; line-height: 1; }
+.oe-and { display: flex; align-items: center; gap: 14px; }
+.oe-rule { width: 40px; height: 1px; background: var(--primary); }
+.oe-invite { margin: 14px 0; }
+.oe-date { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: 100%; margin: 6px 0 14px; font-family: Montserrat, sans-serif; }
+.oe-side { font-size: 12px; letter-spacing: .14em; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 8px 0; }
+.oe-day { display: flex; flex-direction: column; padding: 0 18px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+.oe-day b { font-family: "Cormorant Garamond", serif; font-size: 46px; font-weight: 500; line-height: 1; }
+.oe-day small { font-size: 12px; letter-spacing: .16em; }
+.oe-heart { color: var(--primary); font-size: 20px; margin: 10px 0; }
+.oe-venue { font-family: Montserrat, sans-serif; font-weight: 500; font-size: 13px; letter-spacing: .14em; margin: 0; }
+.oe-reception { font-size: 26px; margin-top: 14px; }
+@media (max-width: 640px) {
+  .oe-card { aspect-ratio: auto; grid-template-columns: 1fr; }
+  .oe-arch { height: 420px; margin: 40px 24px 0; border: 2px solid var(--primary); border-bottom: 0; border-radius: 999px 999px 0 0 / 200px 200px 0 0; }
+  .oe-leaf--top { width: 46%; }
+  .oe-leaf--bottom { width: 40%; }
+  .oe-script { font-size: 28px; }
+  .oe-small { font-size: 11px; }
+}

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OliviaEthanRouteImport } from './routes/olivia-ethan'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as CreateTemplateIdRouteImport } from './routes/create/$templateId'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OliviaEthanRoute = OliviaEthanRouteImport.update({
+  id: '/olivia-ethan',
+  path: '/olivia-ethan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -81,6 +87,7 @@ const DashboardInvitationsInvitationIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/olivia-ethan': typeof OliviaEthanRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/create/$templateId': typeof CreateTemplateIdRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/olivia-ethan': typeof OliviaEthanRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/create/$templateId': typeof CreateTemplateIdRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/olivia-ethan': typeof OliviaEthanRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/create/$templateId': typeof CreateTemplateIdRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/olivia-ethan'
     | '/reset-password'
     | '/signup'
     | '/create/$templateId'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/olivia-ethan'
     | '/reset-password'
     | '/signup'
     | '/create/$templateId'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/olivia-ethan'
     | '/reset-password'
     | '/signup'
     | '/create/$templateId'
@@ -163,6 +175,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  OliviaEthanRoute: typeof OliviaEthanRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   CreateTemplateIdRoute: typeof CreateTemplateIdRoute
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/olivia-ethan': {
+      id: '/olivia-ethan'
+      path: '/olivia-ethan'
+      fullPath: '/olivia-ethan'
+      preLoaderRoute: typeof OliviaEthanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -259,6 +279,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  OliviaEthanRoute: OliviaEthanRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   CreateTemplateIdRoute: CreateTemplateIdRoute,

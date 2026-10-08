@@ -1,9 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { TEMPLATE_IDS } from "@/lib/invitation";
 import { TEMPLATE_PRICE_ETB, isPaidTemplate } from "@/lib/plans";
 
-const templateSchema = z.enum(["royal-tewahedo", "addis-modern", "habesha-romance", "lalibela-stone", "buna-coffee", "wonderland", "traditional"]);
+const templateSchema = z.enum(TEMPLATE_IDS);
 const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal(""));
 /** Must be present and non-blank. Mirrors REQUIRED_BY_STEP in the builder. */
 const requiredText = (max: number) => z.string().trim().min(1).max(max);

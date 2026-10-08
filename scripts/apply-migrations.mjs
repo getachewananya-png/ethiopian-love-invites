@@ -94,6 +94,13 @@ const PROBES = {
     expect: (rows) => rows[0]?.n > 0,
     why: "traditional in the invitations template check",
   },
+  "0008_add_template_olivia_ethan.sql": {
+    check: `select count(*)::int as n from pg_constraint
+              where conname = 'invitations_template_id_check'
+                and pg_get_constraintdef(oid) like '%olivia-ethan%'`,
+    expect: (rows) => rows[0]?.n > 0,
+    why: "olivia-ethan in the invitations template check",
+  },
 };
 
 
