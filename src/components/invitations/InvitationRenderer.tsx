@@ -760,6 +760,22 @@ function OliviaEthanTemplate({
   const dayOfWeek = d.toLocaleString(lang === "am" ? "am-ET" : "en-US", { weekday: "long" }).toUpperCase();
   const yearNum = d.getFullYear();
 
+  const story = localized(lang === "am" ? i.storyAm : i.story, lang === "am" ? i.story : i.storyAm) || i.howWeMet;
+
+  const share = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const title = `${i.brideName} & ${i.groomName}`;
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title, text: story || title, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <main className={`oe-page ${compact ? "invite-compact" : ""}`}>
       {!compact && <LangToggle lang={lang} onLangChange={onLangChange} />}
@@ -799,12 +815,27 @@ function OliviaEthanTemplate({
         </div>
       </article>
 
-      {slug && i.rsvpEnabled ? (
-        <div className="rsvp-block" style={{ maxWidth: "760px", margin: "24px auto 0" }}>
-          <RsvpForm slug={slug} token={token} amharic={lang === "am"} />
+      {!compact && (
+        <div className="invitation-actions" style={{ maxWidth: "760px", margin: "24px auto" }}>
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer aria-hidden="true" /> Print
+          </Button>
+          <Button onClick={() => void share()}>
+            <Share2 aria-hidden="true" /> Share invitation
+          </Button>
         </div>
-      ) : null}
-      <BackgroundMusic url={i.musicUrl} />
+      )}
+
+      {story && (
+        <section className="oe-story-section reveal" data-reveal style={{ maxWidth: "760px", margin: "32px auto" }}>
+          <p className="oe-script" style={{ textAlign: "center" }}>{lang === "am" ? "ታሪካችን" : "Our Story"}</p>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "32px", textAlign: "center", margin: "12px 0 16px" }}>{t.storyHeadline}</h2>
+          <p style={{ fontFamily: "Montserrat, sans-serif", fontSize: "14px", lineHeight: "1.8", color: "var(--foreground)", textAlign: "center", margin: "0 auto", maxWidth: "600px" }}>{story}</p>
+        </section>
+      )}
+
+      <Gallery images={i.galleryImages} hero={hero} lang={lang} />
+      <Closing invitation={i} slug={slug} token={token} lang={lang} />
     </main>
   );
 }
