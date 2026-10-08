@@ -1,15 +1,25 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
-const errorMiddleware = createMiddleware().server(async ({ next }) => {
+const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
   try {
     return await next();
   } catch (error) {
     if (error != null && typeof error === "object" && "statusCode" in error) {
       throw error;
     }
+    const req = request ?? (typeof getRequest === "function" ? getRequest() : undefined);
+    const isServerFn =
+      req?.headers.get("x-server-fn") != null ||
+      req?.url?.includes("/_server");
+
+    if (isServerFn) {
+      throw error;
+    }
+
     console.error(error);
     return new Response(renderErrorPage(), {
       status: 500,

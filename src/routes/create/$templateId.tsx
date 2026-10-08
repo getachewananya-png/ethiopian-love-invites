@@ -13,6 +13,7 @@ import { publishInvitation, uploadWeddingImage } from "@/lib/invitations.functio
 import { startPaidInvitation } from "@/lib/payments.functions";
 import { isPaidTemplate, TEMPLATE_PRICE_ETB, formatEtb } from "@/lib/plans";
 import { useAuth } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/utils";
 import { sampleInvitation, TEMPLATE_IDS, templateMeta, type TemplateId, type WeddingInvitation } from "@/lib/invitation";
 
 export const Route = createFileRoute("/create/$templateId")({
@@ -126,7 +127,7 @@ function Builder() {
           window.location.href=checkout.checkoutUrl;
           return;
         }catch(paymentError){
-          toast.error(paymentError instanceof Error?paymentError.message:"Could not start checkout");
+          toast.error(getErrorMessage(paymentError, "Could not start checkout"));
           return;
         }
       }
@@ -135,10 +136,10 @@ function Builder() {
       setQr(await QRCode.toDataURL(url,{width:720,margin:2,color:{dark:"#2a1714",light:"#fffaf2"}}));
       localStorage.removeItem(storageKey);
     }catch(error){
-      const message=error instanceof Error?error.message:"";
+      const message=getErrorMessage(error, "Invitation could not be created");
       // An expired access token lands here too, so point the user at sign-in
       // instead of leaving them with a dead end.
-      toast.error(/unauthorized/i.test(message)?"Your session has expired — please sign in again.":message||"Invitation could not be created");
+      toast.error(/unauthorized/i.test(message)?"Your session has expired — please sign in again.":message);
     }finally{
       setSaving(false);
     }

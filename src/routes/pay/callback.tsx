@@ -4,6 +4,7 @@ import { CheckCircle2, LoaderCircle, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { verifyPayment, type FulfillResult } from "@/lib/payments.functions";
+import { getErrorMessage } from "@/lib/utils";
 
 const searchSchema = z.object({ tx_ref: z.string().optional() });
 
@@ -41,7 +42,7 @@ function PaymentCallback() {
       .catch((error: unknown) => {
         if (!active) return;
         setState("error");
-        setMessage(error instanceof Error ? error.message : "We could not confirm this payment.");
+        setMessage(getErrorMessage(error, "We could not confirm this payment."));
       });
     return () => {
       active = false;

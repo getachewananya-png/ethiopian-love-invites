@@ -45,6 +45,7 @@ export const startPaidInvitation = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ context, data }): Promise<InitializeResult> => {
     const { supabase, userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     assertPaidTemplate(data.templateId);
     const secret = requireChapaSecret();
     const base = appUrl();
@@ -71,7 +72,7 @@ export const startPaidInvitation = createServerFn({ method: "POST" })
     const amount = TEMPLATE_PRICE_ETB[data.templateId];
     const txRef = buildTxRef(userId);
 
-    const { error: paymentError } = await supabase.from("payments").insert({
+    const { error: paymentError } = await supabaseAdmin.from("payments").insert({
       user_id: userId,
       invitation_id: invitation.id,
       template_id: data.templateId,
@@ -108,7 +109,16 @@ export const startPaidInvitation = createServerFn({ method: "POST" })
 
     const payload = (await response.json().catch(() => null)) as ChapaInitializeResponse | null;
     if (!response.ok || !payload?.data?.checkout_url) {
-      const message = payload?.message ?? `Chapa rejected the payment request (HTTP ${response.status}).`;
+      let message = `Chapa rejected the payment request (HTTP ${response.status}).`;
+      if (typeof payload?.message === "string" && payload.message.trim()) {
+        message = payload.message;
+      } else if (payload?.message && typeof payload.message === "object") {
+        try {
+          message = JSON.stringify(payload.message);
+        } catch {
+          /* ignore */
+        }
+      }
       throw new Error(message);
     }
 
