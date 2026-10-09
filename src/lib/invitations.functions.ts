@@ -93,3 +93,91 @@ export const uploadWeddingImage = createServerFn({ method: "POST" })
     if (signError) throw new Error(signError.message);
     return { path, url: signed.signedUrl };
   });
+
+export const getInvitationForEdit = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((data) => z.object({ invitationId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isUserAdmin } = await import("@/lib/admin");
+    const { userId, claims } = context;
+    const userEmail = (claims as Record<string, unknown> | undefined)?.email as string | undefined;
+    const isAdmin = isUserAdmin(userEmail);
+
+    const { data: row, error } = await supabaseAdmin
+      .from("invitations")
+      .select("*")
+      .eq("id", data.invitationId)
+      .single();
+
+    if (error || !row) throw new Error("Invitation not found");
+    if (!isAdmin && row.user_id !== userId) throw new Error("You do not have permission to edit this invitation");
+
+    return row;
+  });
+
+export const updateInvitation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data) =>
+    invitationSchema.extend({
+      invitationId: z.string().uuid(),
+    }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isUserAdmin } = await import("@/lib/admin");
+    const { userId, claims } = context;
+    const userEmail = (claims as Record<string, unknown> | undefined)?.email as string | undefined;
+    const isAdmin = isUserAdmin(userEmail);
+
+    const { data: existing, error: checkError } = await supabaseAdmin
+      .from("invitations")
+      .select("id, user_id, slug, is_published")
+      .eq("id", data.invitationId)
+      .single();
+
+    if (checkError || !existing) throw new Error("Invitation not found");
+    if (!isAdmin && existing.user_id !== userId) {
+      throw new Error("You do not have permission to update this invitation");
+    }
+
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from("invitations")
+      .update({
+        template_id: data.templateId,
+        bride_name: data.brideName,
+        groom_name: data.groomName,
+        bride_name_am: data.brideNameAm || null,
+        groom_name_am: data.groomNameAm || null,
+        wedding_date: data.weddingDate,
+        wedding_time: data.weddingTime || null,
+        ceremony_type: data.ceremonyType || null,
+        venue: data.venue || null,
+        venue_am: data.venueAm || null,
+        address: data.address || null,
+        address_am: data.addressAm || null,
+        story: data.story || null,
+        story_am: data.storyAm || null,
+        how_we_met: data.howWeMet || null,
+        phone: data.phone || null,
+        email: data.email || null,
+        rsvp_enabled: data.rsvpEnabled,
+        rsvp_deadline: data.rsvpDeadline || null,
+        custom_message: data.customMessage || null,
+        custom_message_am: data.customMessageAm || null,
+        primary_photo_url: data.primaryPhotoUrl || null,
+        gallery_photos: data.galleryImages,
+        maps_url: data.mapsUrl || null,
+        music_url: data.musicUrl || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.invitationId)
+      .select("id, slug, is_published")
+      .single();
+
+    if (updateError || !updated) {
+      throw new Error(updateError?.message ?? "Could not update invitation");
+    }
+
+    return { ...updated, requiresPayment: false };
+  });

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { getDashboard, type DashboardData } from "@/lib/dashboard.functions";
 import { signOut, useAuth } from "@/lib/auth";
 import { formatWeddingDate, templateMeta, type TemplateId } from "@/lib/invitation";
+import { isUserAdmin } from "@/lib/admin";
+import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [
@@ -23,6 +25,7 @@ function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(true);
+  const isAdmin = Boolean(user?.email && isUserAdmin(user.email));
 
   useEffect(() => {
     if (loading) return;
@@ -50,6 +53,11 @@ function DashboardPage() {
       <header className="dash-header">
         <Link to="/" className="dash-brand"><span>ትዝታ</span><strong>TIZITA</strong></Link>
         <div className="dash-header-actions">
+          {isAdmin && (
+            <Button asChild variant="outline" className="border-amber-500/50 text-amber-600 dark:text-amber-400">
+              <Link to="/admin"><ShieldCheck className="w-4 h-4 mr-1"/>Admin Portal</Link>
+            </Button>
+          )}
           <Button asChild variant="outline"><Link to="/create/$templateId" params={{ templateId: "royal-tewahedo" }}><Plus/>New invitation</Link></Button>
           <Button variant="ghost" onClick={() => { void signOut().then(() => navigate({ to: "/" })); }}><LogOut/>Sign out</Button>
         </div>
@@ -139,6 +147,11 @@ function DashboardBody({ data }: { data: DashboardData }) {
               <div className="progress-fill" style={{ width: `${progressWidth(invitation.attending, invitation.targetGuestCount)}%` }}/>
             </div>
             <div className="invitation-card-actions">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/create/$templateId" params={{ templateId: invitation.templateId }} search={{ edit: invitation.id }}>
+                  Edit
+                </Link>
+              </Button>
               <Button variant="outline" size="sm" onClick={() => { void navigator.clipboard.writeText(invitation.shareUrl).then(() => toast.success("Invitation link copied")); }}><Copy/>Copy link</Button>
               <Button asChild variant="outline" size="sm"><Link to="/dashboard/invitations/$invitationId" params={{ invitationId: invitation.id }}>Guests &amp; analytics</Link></Button>
               <Button asChild size="sm"><Link to="/invite/$slug" params={{ slug: invitation.slug }} search={{ token: undefined }}>Open</Link></Button>

@@ -17,6 +17,9 @@ import { getErrorMessage } from "@/lib/utils";
 import { sampleInvitation, TEMPLATE_IDS, templateMeta, type TemplateId, type WeddingInvitation } from "@/lib/invitation";
 
 export const Route = createFileRoute("/create/$templateId")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    edit: typeof search.edit === "string" ? search.edit : undefined,
+  }),
   beforeLoad: ({ params }) => { if (!TEMPLATE_IDS.includes(params.templateId as TemplateId)) throw notFound(); },
   head: ({ params }) => ({ meta: [
     { title: `Customize ${templateMeta[params.templateId as TemplateId]?.name ?? "Invitation"} — Tizita` }, { name: "description", content: "Add your names, wedding details, story, and photos to create your invitation." },
@@ -78,14 +81,75 @@ function missingForStep(step: number, d: WeddingInvitation): string[] {
 }
 function Builder() {
   const { templateId } = Route.useParams(); const id = templateId as TemplateId; const navigate = useNavigate();
-  const [step,setStep]=useState(0); const [saving,setSaving]=useState(false); const [success,setSuccess]=useState<string>(); const [qr,setQr]=useState<string>(); const [drag,setDrag]=useState<string|null>(null); const heroRef=useRef<HTMLInputElement>(null); const galleryRef=useRef<HTMLInputElement>(null);
+  const search = Route.useSearch();
+  const editInvitationId = search.edit;
+  const isEditing = Boolean(editInvitationId);
+
+  const [step,setStep]=useState(0); const [saving,setSaving]=useState(false); const [loadingEdit,setLoadingEdit]=useState(isEditing); const [success,setSuccess]=useState<string>(); const [qr,setQr]=useState<string>(); const [drag,setDrag]=useState<string|null>(null); const heroRef=useRef<HTMLInputElement>(null); const galleryRef=useRef<HTMLInputElement>(null);
   const storageKey=`tizita-draft-${id}`;
   const [data,setData]=useState<WeddingInvitation>(()=>({...sampleInvitation,templateId:id,brideName:"",groomName:"",brideNameAm:"",groomNameAm:"",primaryPhotoUrl:"",galleryImages:[]}));
   // Autosave must not run before the saved draft has been read back, or the
   // initial empty state would overwrite the user's real draft on mount.
   const [hydrated,setHydrated]=useState(false);
-  useEffect(()=>{ const saved=localStorage.getItem(storageKey); if(saved){try{setData(JSON.parse(saved))}catch{ /* ignore corrupt draft */}} setHydrated(true); },[storageKey]);
-  useEffect(()=>{ if(hydrated) localStorage.setItem(storageKey,JSON.stringify(data)) },[data,storageKey,hydrated]);
+
+  useEffect(() => {
+    if (isEditing && editInvitationId) {
+      setLoadingEdit(true);
+      import("@/lib/invitations.functions")
+        .then(({ getInvitationForEdit }) => getInvitationForEdit({ data: { invitationId: editInvitationId } }))
+        .then((existing) => {
+          setData({
+            id: existing.id,
+            slug: existing.slug,
+            templateId: existing.template_id as TemplateId,
+            brideName: existing.bride_name ?? "",
+            groomName: existing.groom_name ?? "",
+            brideNameAm: existing.bride_name_am ?? "",
+            groomNameAm: existing.groom_name_am ?? "",
+            weddingDate: existing.wedding_date ?? "",
+            weddingTime: existing.wedding_time ?? "",
+            ceremonyType: existing.ceremony_type ?? "",
+            venue: existing.venue ?? "",
+            venueAm: existing.venue_am ?? "",
+            address: existing.address ?? "",
+            addressAm: existing.address_am ?? "",
+            story: existing.story ?? "",
+            storyAm: existing.story_am ?? "",
+            howWeMet: existing.how_we_met ?? "",
+            phone: existing.phone ?? "",
+            email: existing.email ?? "",
+            rsvpEnabled: existing.rsvp_enabled ?? true,
+            rsvpDeadline: existing.rsvp_deadline ?? "",
+            customMessage: existing.custom_message ?? "",
+            customMessageAm: existing.custom_message_am ?? "",
+            primaryPhotoUrl: existing.primary_photo_url ?? "",
+            galleryImages: Array.isArray(existing.gallery_photos) ? existing.gallery_photos : [],
+            mapsUrl: existing.maps_url ?? "",
+            musicUrl: existing.music_url ?? "",
+          });
+        })
+        .catch((err) => {
+          toast.error(err instanceof Error ? err.message : "Could not load invitation to edit");
+          navigate({ to: "/dashboard" });
+        })
+        .finally(() => {
+          setLoadingEdit(false);
+          setHydrated(true);
+        });
+      return;
+    }
+
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try { setData(JSON.parse(saved)); } catch { /* ignore corrupt draft */ }
+    }
+    setHydrated(true);
+  }, [storageKey, isEditing, editInvitationId, navigate]);
+
+  useEffect(() => {
+    if (hydrated && !isEditing) localStorage.setItem(storageKey, JSON.stringify(data));
+  }, [data, storageKey, hydrated, isEditing]);
+
   const update=(field:keyof WeddingInvitation,value:unknown)=>setData(current=>({...current,[field]:value}));
   const next=()=>{const missing=missingForStep(step,data); if(missing.length){toast.error(`Please add: ${missing.join(", ")}.`); return} setStep(Math.min(5,step+1));};
   /** Uploads one file into either the hero slot or the gallery. */
@@ -120,6 +184,13 @@ function Builder() {
     if(!user){ navigate({to:"/signup",search:{redirect:`/create/${id}`}}); toast.error("Create an account to generate your invitation."); return; }
     setSaving(true);
     try{
+      if (isEditing && editInvitationId) {
+        const { updateInvitation } = await import("@/lib/invitations.functions");
+        const result = await updateInvitation({ data: { ...data, invitationId: editInvitationId } });
+        toast.success("Invitation updated successfully!");
+        navigate({ to: "/invite/$slug", params: { slug: result.slug } });
+        return;
+      }
       const result=await publishInvitation({data});
       if(result.requiresPayment){
         try{
@@ -136,7 +207,7 @@ function Builder() {
       setQr(await QRCode.toDataURL(url,{width:720,margin:2,color:{dark:"#2a1714",light:"#fffaf2"}}));
       localStorage.removeItem(storageKey);
     }catch(error){
-      const message=getErrorMessage(error, "Invitation could not be created");
+      const message=getErrorMessage(error, isEditing ? "Invitation could not be updated" : "Invitation could not be created");
       // An expired access token lands here too, so point the user at sign-in
       // instead of leaving them with a dead end.
       toast.error(/unauthorized/i.test(message)?"Your session has expired — please sign in again.":message);
@@ -144,8 +215,11 @@ function Builder() {
       setSaving(false);
     }
   };
+  if(loadingEdit) {
+    return <main className="builder-page" style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"80vh"}}><LoaderCircle className="spin" style={{marginRight:8}}/> Loading invitation...</main>;
+  }
   if(success) return <Success url={success} qr={qr}/>;
-  return <main className="builder-page"><header className="builder-header"><Button asChild variant="ghost"><Link to="/"><ArrowLeft/> Exit</Link></Button><div className="builder-brand"><span>ትዝታ</span><strong>{templateMeta[id].name}</strong></div><span className="autosave"><Check/> Draft saved</span></header>
+  return <main className="builder-page"><header className="builder-header"><Button asChild variant="ghost"><Link to={isEditing ? "/dashboard" : "/"}><ArrowLeft/> {isEditing ? "Dashboard" : "Exit"}</Link></Button><div className="builder-brand"><span>ትዝታ</span><strong>{templateMeta[id].name}{isEditing ? " (Editing)" : ""}</strong></div><span className="autosave"><Check/> {isEditing ? "Editing invitation" : "Draft saved"}</span></header>
     <div className="builder-progress"><div className="progress-top"><span>Step {step+1} of 6</span><strong>{steps[step]}</strong></div><div className="progress-track"><i style={{width:`${((step+1)/6)*100}%`}}/></div><div className="progress-labels">{steps.map((name,index)=><button key={name} className={index<=step?"active":""} onClick={()=>setStep(index)}><span>{index<step?<Check/>:index+1}</span>{name}</button>)}</div></div>
     <div className="builder-workspace"><section className="builder-form"><div className="form-heading"><p>{String(step+1).padStart(2,"0")} / 06</p><h1>{["Tell us your names","When & where","Share your story","Add your moments","Guest replies","One last look"][step]}</h1><span>{["The names at the heart of your invitation.","Everything your guests need to arrive with ease.","A few words that sound unmistakably like you.","Choose one main portrait and your favorite memories.","Make it easy for your people to say yes.","Your invitation is ready to become real."][step]}</span></div>
       {step===0&&<div className="form-grid"><Field label="Bride's Name"><Input value={data.brideName} onChange={e=>update("brideName",e.target.value)} placeholder="Hana Tesfaye" maxLength={100}/></Field><Field label="Groom's Name"><Input value={data.groomName} onChange={e=>update("groomName",e.target.value)} placeholder="Abebe Mekonnen" maxLength={100}/></Field><Field label="Bride's Name in Amharic"><Input lang="am" value={data.brideNameAm} onChange={e=>update("brideNameAm",e.target.value)} placeholder="ሀና ተስፋዬ" maxLength={100}/></Field><Field label="Groom's Name in Amharic"><Input lang="am" value={data.groomNameAm} onChange={e=>update("groomNameAm",e.target.value)} placeholder="አቤቤ መኮንን" maxLength={100}/></Field></div>}
@@ -175,7 +249,7 @@ function Builder() {
       </div>}
       {step===4&&<div className="form-stack"><div className="rsvp-toggle"><div><h3>Enable RSVP</h3><p>Show reply details on your invitation.</p></div><Switch checked={data.rsvpEnabled} onCheckedChange={value=>update("rsvpEnabled",value)}/></div>{data.rsvpEnabled&&<div className="form-grid"><Field label="RSVP deadline"><Input type="date" value={data.rsvpDeadline} onChange={e=>update("rsvpDeadline",e.target.value)}/></Field><Field label="Contact phone"><Input type="tel" value={data.phone} onChange={e=>update("phone",e.target.value)} placeholder="+251 911 234 567"/></Field><Field label="Contact email"><Input type="email" value={data.email} onChange={e=>update("email",e.target.value)} placeholder="hello@example.com"/></Field><Field label="Closing message" optional><Textarea value={data.customMessage} onChange={e=>update("customMessage",e.target.value)} placeholder="With joyful hearts..."/></Field></div>}</div>}
       {step===5&&<div className="review-list"><Review icon={HeartIcon} label="Couple" value={`${data.brideName} & ${data.groomName}`} onEdit={()=>setStep(0)}/><Review icon={CalendarDays} label="Wedding" value={`${data.weddingDate} · ${data.weddingTime}`} onEdit={()=>setStep(1)}/><Review icon={MapPin} label="Venue" value={data.venue||"Not added"} onEdit={()=>setStep(1)}/><Review icon={ImagePlus} label="Photos" value={`${(data.primaryPhotoUrl?1:0)+data.galleryImages.length} uploaded`} onEdit={()=>setStep(3)}/><Review icon={Phone} label="RSVP" value={data.rsvpEnabled?(data.phone||data.email||"Enabled"):"Disabled"} onEdit={()=>setStep(4)}/></div>}
-      <div className="form-navigation"><Button variant="outline" disabled={step===0||saving} onClick={()=>setStep(step-1)}><ArrowLeft/>Back</Button>{step<5?<Button onClick={next}>Continue<ArrowRight/></Button>:<Button onClick={publish} disabled={saving}>{saving?<LoaderCircle className="spin"/>:<Share2/>}{paid?`Continue to payment · ${formatEtb(TEMPLATE_PRICE_ETB[id])}`:"Generate My Invitation"}</Button>}</div>
+      <div className="form-navigation"><Button variant="outline" disabled={step===0||saving} onClick={()=>setStep(step-1)}><ArrowLeft/>Back</Button>{step<5?<Button onClick={next}>Continue<ArrowRight/></Button>:<Button onClick={publish} disabled={saving}>{saving?<LoaderCircle className="spin"/>:<Share2/>}{isEditing ? "Save Changes" : (paid?`Continue to payment · ${formatEtb(TEMPLATE_PRICE_ETB[id])}`:"Generate My Invitation")}</Button>}</div>
     </section><aside className="live-preview"><div className="preview-label"><div><span>LIVE PREVIEW</span><i/></div><strong>{templateMeta[id].name}</strong>{paid && <em className="tier-badge paid">{formatEtb(TEMPLATE_PRICE_ETB[id])} · Premium</em>}</div><div className="phone-preview"><InvitationRenderer invitation={data} compact/></div></aside></div></main>;
 }
 function Field({label,children,optional}:{label:string;children:React.ReactNode;optional?:boolean}){return <Label className="field"><span>{label}{optional?<em className="field-optional">Optional</em>:<em className="field-required">Required</em>}</span>{children}</Label>}

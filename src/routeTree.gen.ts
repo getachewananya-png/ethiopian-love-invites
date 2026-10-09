@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as OliviaEthanRouteImport } from './routes/olivia-ethan'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as CreateTemplateIdRouteImport } from './routes/create/$templateId'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as InviteSlugRouteImport } from './routes/invite/$slug'
@@ -45,6 +46,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateTemplateIdRoute = CreateTemplateIdRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/invite/$slug': typeof InviteSlugRoute
   '/pay/callback': typeof PayCallbackRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/chapa/webhook': typeof ApiChapaWebhookRoute
   '/dashboard/invitations/$invitationId': typeof DashboardInvitationsInvitationIdRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/invite/$slug': typeof InviteSlugRoute
   '/pay/callback': typeof PayCallbackRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/admin': typeof AdminIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/api/chapa/webhook': typeof ApiChapaWebhookRoute
   '/dashboard/invitations/$invitationId': typeof DashboardInvitationsInvitationIdRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/invite/$slug': typeof InviteSlugRoute
   '/pay/callback': typeof PayCallbackRoute
   '/templates/$templateId': typeof TemplatesTemplateIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/chapa/webhook': typeof ApiChapaWebhookRoute
   '/dashboard/invitations/$invitationId': typeof DashboardInvitationsInvitationIdRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/invite/$slug'
     | '/pay/callback'
     | '/templates/$templateId'
+    | '/admin/'
     | '/dashboard/'
     | '/api/chapa/webhook'
     | '/dashboard/invitations/$invitationId'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/invite/$slug'
     | '/pay/callback'
     | '/templates/$templateId'
+    | '/admin'
     | '/dashboard'
     | '/api/chapa/webhook'
     | '/dashboard/invitations/$invitationId'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/invite/$slug'
     | '/pay/callback'
     | '/templates/$templateId'
+    | '/admin/'
     | '/dashboard/'
     | '/api/chapa/webhook'
     | '/dashboard/invitations/$invitationId'
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   InviteSlugRoute: typeof InviteSlugRoute
   PayCallbackRoute: typeof PayCallbackRoute
   TemplatesTemplateIdRoute: typeof TemplatesTemplateIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   ApiChapaWebhookRoute: typeof ApiChapaWebhookRoute
   DashboardInvitationsInvitationIdRoute: typeof DashboardInvitationsInvitationIdRoute
@@ -222,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create/$templateId': {
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   InviteSlugRoute: InviteSlugRoute,
   PayCallbackRoute: PayCallbackRoute,
   TemplatesTemplateIdRoute: TemplatesTemplateIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   ApiChapaWebhookRoute: ApiChapaWebhookRoute,
   DashboardInvitationsInvitationIdRoute: DashboardInvitationsInvitationIdRoute,
