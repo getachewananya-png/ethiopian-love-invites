@@ -696,20 +696,14 @@ function Closing({
       <h2>
         {i.brideName} <span>&</span> {i.groomName}
       </h2>
-      {i.rsvpEnabled && slug ? (
+      {i.rsvpEnabled ? (
         <RsvpForm
-          slug={slug}
+          slug={slug || "preview"}
           token={token}
           deadline={i.rsvpDeadline ? formatWeddingDate(i.rsvpDeadline) : undefined}
           amharic={lang === "am"}
+          isPreview={!slug}
         />
-      ) : i.rsvpEnabled ? (
-        <div className="rsvp-block">
-          <span>
-            {t.replyBy} {i.rsvpDeadline ? formatWeddingDate(i.rsvpDeadline) : t.rsvpDate}
-          </span>
-          <strong>{i.phone || i.email}</strong>
-        </div>
       ) : null}
       <MapSection mapsUrl={i.mapsUrl} venue={i.venue} address={i.address} label={t.viewLocation} />
       <BackgroundMusic url={i.musicUrl} />

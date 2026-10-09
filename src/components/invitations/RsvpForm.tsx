@@ -1,15 +1,42 @@
-import { Check, Heart, LoaderCircle, X } from "lucide-react";
+import {
+  CalendarHeart,
+  Check,
+  Heart,
+  LoaderCircle,
+  MessageSquareHeart,
+  Minus,
+  Plus,
+  RotateCcw,
+  User,
+  Users,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { submitRsvp } from "@/lib/rsvp.functions";
 
+export interface RsvpFormProps {
+  slug: string;
+  token?: string | undefined;
+  deadline?: string | undefined;
+  amharic?: boolean | undefined;
+  isPreview?: boolean | undefined;
+}
+
 /**
- * The real RSVP form that replaces the decorative closing block.
- * Posting here is what feeds the dashboard's reply and headcount analytics.
+ * The real RSVP form for wedding guests to accept/decline and submit headcount & wishes.
+ * Supports live guest submissions as well as clean preview demonstration mode.
  */
-export function RsvpForm({ slug, token, deadline, amharic = false }: { slug: string; token?: string | undefined; deadline?: string | undefined; amharic?: boolean | undefined }) {
+export function RsvpForm({
+  slug,
+  token,
+  deadline,
+  amharic = false,
+  isPreview = false,
+}: RsvpFormProps) {
   const [name, setName] = useState("");
   const [attending, setAttending] = useState<boolean | null>(null);
   const [partySize, setPartySize] = useState(1);
@@ -18,24 +45,123 @@ export function RsvpForm({ slug, token, deadline, amharic = false }: { slug: str
   const [done, setDone] = useState<string>("");
 
   const t = amharic
-    ? { title: "እባክዎ ይመልሱ", name: "ስምዎ", yes: "እመጣለሁ", no: "አልመጣም", guests: "የሚመጡ ቁጥር", note: "መልእክት (አማራጭ)", send: "መልስ ላክ", by: "እባክዎ ከ" }
-    : { title: "Kindly reply", name: "Your name", yes: "Joyfully accept", no: "Regretfully decline", guests: "Guests in your party", note: "A message (optional)", send: "Send RSVP", by: "Kindly reply by" };
+    ? {
+        title: "እባክዎ ይመልሱ",
+        by: "እባክዎ እስከ",
+        subtitle: "ከልብ አብረውን እንዲያከብሩ እንጠብቃለን",
+        name: "ሙሉ ስምዎ",
+        namePlaceholder: "ሙሉ ስምዎን ያስገቡ",
+        attendance: "መገኘትዎን ያሳውቁን",
+        yes: "በደስታ እገኛለሁ",
+        no: "ይቅርታ አልገኝም",
+        guests: "የሚመጡ እንግዶች ብዛት",
+        guestsSub: "እርስዎን ጨምሮ",
+        note: "መልካም ምኞት ወይም ማስታወሻ",
+        notePlaceholder: "ለሙሽሮቹ መልካም ምኞት ወይም ማስታወሻ ያካፍሉ...",
+        send: "መልስዎን ይላኩ",
+        sending: "በመላክ ላይ...",
+        thanks: "መልስዎን ስላሳወቁን ከልብ እናመሰግናለን!",
+      }
+    : {
+        title: "Kindly reply",
+        by: "Kindly reply by",
+        subtitle: "We look forward to celebrating together",
+        name: "Your Name",
+        namePlaceholder: "Enter your full name",
+        attendance: "Will you be attending?",
+        yes: "Joyfully accept",
+        no: "Regretfully decline",
+        guests: "Guests in your party",
+        guestsSub: "Including yourself",
+        note: "Message or warm wishes",
+        notePlaceholder: "Write a blessing or note for the couple...",
+        send: "Send RSVP",
+        sending: "Sending RSVP...",
+        thanks: "Thank you for your reply!",
+      };
 
   if (done) {
-    return <div className="rsvp-block rsvp-done"><Check/><strong>{done}</strong></div>;
+    return (
+      <div className="rsvp-block rsvp-done">
+        <div className="rsvp-done-icon">
+          <Check size={28} />
+        </div>
+        <h3 className="rsvp-done-title">{t.thanks}</h3>
+        <p className="rsvp-done-msg">{done}</p>
+        {isPreview && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setDone("");
+              setName("");
+              setAttending(null);
+              setPartySize(1);
+              setMessage("");
+            }}
+            className="mt-3 gap-1.5"
+          >
+            <RotateCcw size={14} /> Reset Preview
+          </Button>
+        )}
+      </div>
+    );
   }
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!name.trim()) { toast.error("Please tell us your name."); return; }
-    if (attending === null) { toast.error("Please choose whether you can attend."); return; }
+    if (!name.trim()) {
+      toast.error(amharic ? "እባክዎ ስምዎን ያስገቡ" : "Please enter your name.");
+      return;
+    }
+    if (attending === null) {
+      toast.error(
+        amharic
+          ? "እባክዎ መገኘትዎን ወይም አለመገኘትዎን ይምረጡ"
+          : "Please choose whether you can attend.",
+      );
+      return;
+    }
+
+    if (isPreview) {
+      setBusy(true);
+      setTimeout(() => {
+        setBusy(false);
+        setDone(
+          amharic
+            ? "መልስዎን ስላሳወቁን እናመሰግናለን! (የሙከራ እይታ)"
+            : "Your reply was received! (Preview mode demonstration)",
+        );
+        toast.success(
+          amharic ? "መልስ ተልኳል (ሙከራ)" : "Thank you for your reply!",
+        );
+      }, 500);
+      return;
+    }
+
     setBusy(true);
     try {
-      const result = await submitRsvp({ data: { slug, token, name, attending, partySize, message } });
+      const result = await submitRsvp({
+        data: {
+          slug,
+          token,
+          name: name.trim(),
+          attending,
+          partySize: attending ? partySize : 0,
+          message: message.trim(),
+        },
+      });
       setDone(result.thankYou);
-      toast.success("Thank you for your reply");
+      toast.success(amharic ? "መልስዎ ተልኳል" : "Thank you for your reply");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Your reply could not be sent");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : amharic
+            ? "መልስ መላክ አልተቻለም"
+            : "Your reply could not be sent",
+      );
     } finally {
       setBusy(false);
     }
@@ -43,21 +169,151 @@ export function RsvpForm({ slug, token, deadline, amharic = false }: { slug: str
 
   return (
     <form className="rsvp-block rsvp-form" onSubmit={submit}>
-      <p className="rsvp-heading"><Heart/>{t.title}{deadline ? ` · ${t.by} ${deadline}` : ""}</p>
-      <label className="rsvp-field"><span>{t.name}</span>
-        <Input value={name} onChange={(event) => setName(event.target.value)} required maxLength={120}/>
-      </label>
-      <div className="rsvp-choice">
-        <button type="button" className={attending === true ? "active yes" : ""} onClick={() => setAttending(true)}><Check/>{t.yes}</button>
-        <button type="button" className={attending === false ? "active no" : ""} onClick={() => setAttending(false)}><X/>{t.no}</button>
+      {/* Header with single deadline text (no duplication) */}
+      <div className="rsvp-header">
+        <div className="rsvp-header-badge">
+          <Heart size={15} className="fill-current" />
+          <span>{deadline ? `${t.by} ${deadline}` : t.title}</span>
+        </div>
+        <p className="rsvp-subtitle">{t.subtitle}</p>
       </div>
-      {attending === true && <label className="rsvp-field"><span>{t.guests}</span>
-        <Input type="number" min={1} max={20} value={partySize} onChange={(event) => setPartySize(Number(event.target.value))}/>
-      </label>}
-      <label className="rsvp-field"><span>{t.note}</span>
-        <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={1000} rows={3}/>
-      </label>
-      <Button type="submit" disabled={busy} size="lg">{busy ? <LoaderCircle className="spin"/> : <Heart/>}{t.send}</Button>
+
+      {/* Name field */}
+      <div className="rsvp-field">
+        <label htmlFor="rsvp-name">
+          <User size={15} />
+          <span>{t.name}</span>
+          <span className="rsvp-req">*</span>
+        </label>
+        <Input
+          id="rsvp-name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder={t.namePlaceholder}
+          required
+          maxLength={120}
+          className="rsvp-input"
+        />
+      </div>
+
+      {/* Attendance choice */}
+      <div className="rsvp-field">
+        <label>
+          <CalendarHeart size={15} />
+          <span>{t.attendance}</span>
+          <span className="rsvp-req">*</span>
+        </label>
+        <div className="rsvp-choice">
+          <button
+            type="button"
+            className={`rsvp-choice-btn yes ${attending === true ? "active" : ""}`}
+            onClick={() => setAttending(true)}
+          >
+            <Check size={18} />
+            <span>{t.yes}</span>
+          </button>
+          <button
+            type="button"
+            className={`rsvp-choice-btn no ${attending === false ? "active" : ""}`}
+            onClick={() => {
+              setAttending(false);
+              setPartySize(1);
+            }}
+          >
+            <X size={18} />
+            <span>{t.no}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Party size counter (shown when joyfully accepting) */}
+      {attending === true && (
+        <div className="rsvp-field rsvp-party-field">
+          <div className="rsvp-field-header">
+            <label htmlFor="rsvp-party-count">
+              <Users size={15} />
+              <span>{t.guests}</span>
+            </label>
+            <span className="rsvp-field-hint">{t.guestsSub}</span>
+          </div>
+
+          <div className="rsvp-counter">
+            <div className="rsvp-quick-pills">
+              {[1, 2, 3, 4, 5].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`rsvp-pill ${partySize === num ? "active" : ""}`}
+                  onClick={() => setPartySize(num)}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+
+            <div className="rsvp-stepper">
+              <button
+                type="button"
+                className="rsvp-step-btn"
+                onClick={() => setPartySize((p) => Math.max(1, p - 1))}
+                disabled={partySize <= 1}
+                aria-label="Decrease party size"
+              >
+                <Minus size={15} />
+              </button>
+              <span className="rsvp-step-value" id="rsvp-party-count">
+                {partySize}
+              </span>
+              <button
+                type="button"
+                className="rsvp-step-btn"
+                onClick={() => setPartySize((p) => Math.min(20, p + 1))}
+                disabled={partySize >= 20}
+                aria-label="Increase party size"
+              >
+                <Plus size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Message or wishes */}
+      <div className="rsvp-field">
+        <label htmlFor="rsvp-message">
+          <MessageSquareHeart size={15} />
+          <span>{t.note}</span>
+        </label>
+        <Textarea
+          id="rsvp-message"
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder={t.notePlaceholder}
+          maxLength={1000}
+          rows={3}
+          className="rsvp-textarea"
+        />
+      </div>
+
+      {/* Submit button */}
+      <Button
+        type="submit"
+        disabled={busy}
+        size="lg"
+        className="rsvp-submit-btn"
+      >
+        {busy ? (
+          <>
+            <LoaderCircle className="spin" size={18} />
+            <span>{t.sending}</span>
+          </>
+        ) : (
+          <>
+            <Heart size={18} className="fill-current" />
+            <span>{t.send}</span>
+          </>
+        )}
+      </Button>
     </form>
   );
 }

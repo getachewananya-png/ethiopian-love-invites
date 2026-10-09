@@ -317,13 +317,62 @@ footer > span { font-size: 0.875rem; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
 .form-stack { display: flex; flex-direction: column; gap: 1.25rem; }
 label.field,
-.field { display: flex; flex-direction: column; gap: 0.5rem; }
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: #ffffff !important;
+  border: 1.5px solid oklch(0.88 0.015 80) !important;
+  border-radius: 0.875rem !important;
+  padding: 0.55rem 0.875rem 0.45rem !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: text;
+}
+label.field:focus-within,
+.field:focus-within {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08) !important;
+}
 label.field > span,
-.field > span { font-size: 0.8125rem; font-weight: 600; color: oklch(0.4 0.03 265); }
+.field > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #000000 !important; /* Pure black label color inside field */
+  user-select: none;
+  margin-bottom: 0.15rem;
+}
+.field input,
+.field textarea {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0.1rem 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  font-size: 0.95rem !important;
+  color: #111827 !important;
+  width: 100% !important;
+}
+.field input {
+  height: 2rem !important;
+}
+.field input:focus,
+.field textarea:focus {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  outline: none !important;
+}
 label.field textarea,
-.field textarea { min-height: 7rem; resize: vertical; }
+.field textarea { min-height: 5.5rem; resize: vertical; }
 label.field textarea.large,
-.field textarea.large { min-height: 11rem; }
+.field textarea.large { min-height: 9.5rem; }
 .form-navigation { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid oklch(0.94 0.01 265); }
 .live-preview { position: sticky; top: 6rem; }
 .preview-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
@@ -553,11 +602,26 @@ label.field textarea.large,
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.625rem; margin-top: 1rem; }
 .photo-grid .photo-row { margin: 0; }
 /* Required / Optional markers next to every field label. */
-.field > span { display: flex; align-items: center; gap: 0.5rem; }
+.field > span { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .field-required,
-.field-optional { font-style: normal; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-.field-required { color: oklch(0.55 0.12 45); }
-.field-optional { color: oklch(0.6 0.02 265); }
+.field-optional {
+  font-style: normal;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+.field-required {
+  background: oklch(0.96 0.03 45);
+  color: oklch(0.45 0.14 45);
+  border: 1px solid oklch(0.88 0.06 45 / 0.5);
+}
+.field-optional {
+  background: oklch(0.965 0.005 265);
+  color: oklch(0.52 0.02 265);
+}
 .invitation { background: white; color: oklch(0.25 0.03 265); font-family:
     "Inter",
     -apple-system,
@@ -753,9 +817,73 @@ label.field textarea.large,
 .royal-invite .invite-closing h2 { font-family: "Playfair Display", "Georgia", serif; }
 .royal-invite .invite-closing h2 span { color: oklch(0.85 0.11 85); }
 .royal-invite .invite-closing a { color: oklch(0.88 0.1 85); }
-.royal-invite .rsvp-block { border-color: oklch(0.55 0.09 300); background: oklch(0.45 0.1 300 / 0.4); }
-.royal-invite .rsvp-block span { color: oklch(0.88 0.06 85); }
-.royal-invite .rsvp-block strong { color: oklch(0.97 0.03 85); }
+.royal-invite .rsvp-block {
+  border-color: oklch(0.55 0.09 300);
+  background: oklch(0.35 0.08 300);
+  color: oklch(0.97 0.03 85);
+  box-shadow: 0 16px 36px -12px oklch(0 0 0 / 0.5);
+}
+.royal-invite .rsvp-header-badge {
+  background: oklch(0.42 0.1 300);
+  border-color: oklch(0.7 0.12 85 / 0.6);
+  color: oklch(0.92 0.08 85);
+}
+.royal-invite .rsvp-subtitle { color: oklch(0.85 0.04 85); }
+.royal-invite .rsvp-field {
+  background: #ffffff !important;
+  border-color: oklch(0.85 0.11 85 / 0.6) !important;
+}
+.royal-invite .rsvp-field:focus-within {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15) !important;
+}
+.royal-invite .rsvp-field label,
+.royal-invite .rsvp-field .rsvp-field-label { color: #000000 !important; }
+.royal-invite .rsvp-field label svg,
+.royal-invite .rsvp-field .rsvp-field-label svg { color: #000000 !important; }
+.royal-invite .rsvp-input,
+.royal-invite .rsvp-field input,
+.royal-invite .rsvp-textarea,
+.royal-invite .rsvp-field textarea {
+  color: #111827 !important;
+  background: transparent !important;
+}
+.royal-invite .rsvp-choice-btn {
+  background: oklch(0.28 0.06 300);
+  border-color: oklch(0.48 0.08 300);
+  color: oklch(0.92 0.04 85);
+}
+.royal-invite .rsvp-party-field {
+  background: oklch(0.28 0.06 300);
+  border-color: oklch(0.45 0.08 300);
+}
+.royal-invite .rsvp-pill {
+  background: oklch(0.25 0.05 300);
+  border-color: oklch(0.45 0.08 300);
+  color: oklch(0.92 0.04 85);
+}
+.royal-invite .rsvp-pill.active {
+  background: oklch(0.75 0.14 85);
+  border-color: oklch(0.75 0.14 85);
+  color: oklch(0.22 0.05 300);
+}
+.royal-invite .rsvp-stepper {
+  background: oklch(0.25 0.05 300);
+  border-color: oklch(0.45 0.08 300);
+}
+.royal-invite .rsvp-step-btn {
+  background: oklch(0.35 0.07 300);
+  color: oklch(0.95 0.03 85);
+}
+.royal-invite .rsvp-step-value { color: oklch(0.95 0.03 85); }
+.royal-invite .rsvp-submit-btn {
+  background: oklch(0.75 0.14 85) !important;
+  color: oklch(0.22 0.05 300) !important;
+  box-shadow: 0 6px 20px oklch(0.75 0.14 85 / 0.35) !important;
+}
+.royal-invite .rsvp-submit-btn:hover:not(:disabled) {
+  background: oklch(0.82 0.14 85) !important;
+}
 /* --- MOTION · entrance ---------------------------------------------
    Fire once the observer adds `.is-revealed`, and only on the public page
    (`.reveal-on`). Previews never see them, so nothing that depends on them
@@ -1185,25 +1313,294 @@ label.field textarea.large,
 .pay-icon.fail { color: oklch(0.55 0.18 25); }
 .pay-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-top: 1rem; }
 /* ===== RSVP ===== */
-.rsvp-block { margin-top: 2.5rem; padding: 1.75rem 1.5rem; background: oklch(0.985 0.004 80); border: 1px solid oklch(0.9 0.03 80); border-radius: 1rem; }
-.rsvp-heading { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.375rem; }
-.rsvp-form p { font-size: 0.875rem; color: oklch(0.5 0.03 265); margin: 0 0 1.125rem; }
-.rsvp-field { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 0.875rem; }
-.rsvp-field label { font-size: 0.8125rem; font-weight: 600; color: oklch(0.4 0.03 265); }
-.rsvp-choice { display: flex; flex-wrap: wrap; gap: 0.625rem; margin-bottom: 1rem; }
-.rsvp-choice button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; flex: 1 1 10rem; padding: 0.75rem 1rem; background: white; border: 1px solid oklch(0.88 0.02 80); border-radius: 0.625rem; font-size: 0.9375rem; font-weight: 500; color: oklch(0.35 0.03 265); cursor: pointer; transition:
-    border-color 0.15s,
-    background 0.15s,
-    color 0.15s; }
-.rsvp-choice button svg { width: 1rem; height: 1rem; }
-.rsvp-choice button:hover { border-color: oklch(0.75 0.05 55); }
-.rsvp-choice button.active { border-color: currentColor; font-weight: 650; }
-.rsvp-choice button.active.yes { background: oklch(0.96 0.04 150); border-color: oklch(0.6 0.1 150); color: oklch(0.4 0.09 150); }
-.rsvp-choice button.active.no { background: oklch(0.96 0.03 25); border-color: oklch(0.62 0.12 25); color: oklch(0.45 0.12 25); }
-.rsvp-choice label.selected { border-color: oklch(0.55 0.15 45); background: oklch(0.97 0.02 45); }
-.rsvp-done { display: flex; flex-direction: column; align-items: center; gap: 0.625rem; padding: 2rem 1.5rem; text-align: center; }
-.rsvp-done h3 { font-size: 1.125rem; font-weight: 700; margin: 0; }
-.rsvp-done p { font-size: 0.9375rem; color: oklch(0.5 0.03 265); margin: 0; }
+.rsvp-block {
+  margin: 2.5rem auto 0;
+  max-width: 32rem;
+  padding: 2rem 1.75rem;
+  background: white;
+  border: 1px solid oklch(0.9 0.02 80);
+  border-radius: 1.25rem;
+  box-shadow: 0 16px 36px -12px oklch(0 0 0 / 0.08);
+  text-align: left;
+}
+.rsvp-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+.rsvp-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.1rem;
+  background: oklch(0.97 0.02 45);
+  border: 1px solid oklch(0.88 0.06 45);
+  border-radius: 999px;
+  color: oklch(0.42 0.14 45);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+}
+.rsvp-header-badge svg { color: oklch(0.55 0.16 25); }
+.rsvp-subtitle {
+  font-size: 0.875rem;
+  color: oklch(0.5 0.02 265);
+  margin: 0.25rem 0 0;
+}
+.rsvp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: #ffffff !important;
+  border: 1.5px solid oklch(0.88 0.015 80) !important;
+  border-radius: 0.875rem !important;
+  padding: 0.55rem 0.875rem 0.45rem !important;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: text;
+}
+.rsvp-field:focus-within {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08) !important;
+}
+.rsvp-field label,
+.rsvp-field .rsvp-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #000000 !important; /* Pure black label color inside field */
+  user-select: none;
+  margin-bottom: 0.15rem;
+}
+.rsvp-field label svg,
+.rsvp-field .rsvp-field-label svg {
+  color: #000000 !important;
+  flex-shrink: 0;
+}
+.rsvp-req {
+  color: oklch(0.55 0.18 25);
+  font-weight: 700;
+}
+.rsvp-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rsvp-field-hint {
+  font-size: 0.75rem;
+  color: oklch(0.5 0.02 265);
+}
+.rsvp-input,
+.rsvp-field input {
+  height: 2rem !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0.1rem 0 !important;
+  font-size: 0.95rem !important;
+  color: #111827 !important;
+  width: 100% !important;
+}
+.rsvp-input:focus,
+.rsvp-field input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+.rsvp-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.rsvp-choice-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: white;
+  border: 1.5px solid oklch(0.88 0.015 80);
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: oklch(0.35 0.03 265);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.rsvp-choice-btn:hover {
+  border-color: oklch(0.7 0.08 45);
+  transform: translateY(-1px);
+}
+.rsvp-choice-btn.yes.active {
+  background: oklch(0.96 0.04 150);
+  border-color: oklch(0.52 0.14 150);
+  color: oklch(0.32 0.12 150);
+  box-shadow: 0 4px 12px oklch(0.52 0.14 150 / 0.18);
+  font-weight: 700;
+}
+.rsvp-choice-btn.no.active {
+  background: oklch(0.97 0.03 25);
+  border-color: oklch(0.58 0.14 25);
+  color: oklch(0.4 0.14 25);
+  box-shadow: 0 4px 12px oklch(0.58 0.14 25 / 0.18);
+  font-weight: 700;
+}
+.rsvp-party-field {
+  background: oklch(0.985 0.005 80);
+  border: 1px solid oklch(0.92 0.01 80);
+  border-radius: 0.875rem;
+  padding: 1rem;
+}
+.rsvp-counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+.rsvp-quick-pills {
+  display: flex;
+  gap: 0.35rem;
+}
+.rsvp-pill {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.625rem;
+  border: 1px solid oklch(0.88 0.015 80);
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: oklch(0.35 0.03 265);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: grid;
+  place-items: center;
+}
+.rsvp-pill:hover {
+  border-color: oklch(0.65 0.12 45);
+}
+.rsvp-pill.active {
+  background: oklch(0.45 0.15 45);
+  border-color: oklch(0.45 0.15 45);
+  color: white;
+  box-shadow: 0 2px 8px oklch(0.45 0.15 45 / 0.3);
+}
+.rsvp-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: white;
+  border: 1px solid oklch(0.88 0.015 80);
+  border-radius: 0.625rem;
+  padding: 0.2rem;
+}
+.rsvp-step-btn {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.45rem;
+  border: none;
+  background: oklch(0.96 0.005 265);
+  color: oklch(0.3 0.03 265);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rsvp-step-btn:hover:not(:disabled) {
+  background: oklch(0.92 0.01 265);
+}
+.rsvp-step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.rsvp-step-value {
+  min-width: 1.75rem;
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: oklch(0.2 0.03 265);
+}
+.rsvp-textarea,
+.rsvp-field textarea {
+  min-height: 4.75rem !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0.15rem 0 0 !important;
+  font-size: 0.95rem !important;
+  color: #111827 !important;
+  resize: vertical;
+  width: 100% !important;
+  outline: none !important;
+}
+.rsvp-textarea:focus,
+.rsvp-field textarea:focus {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  outline: none !important;
+}
+.rsvp-submit-btn {
+  width: 100%;
+  height: 3.1rem !important;
+  border-radius: 0.875rem !important;
+  background: oklch(0.42 0.14 45) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  gap: 0.5rem;
+  box-shadow: 0 6px 18px oklch(0.42 0.14 45 / 0.28) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer;
+}
+.rsvp-submit-btn:hover:not(:disabled) {
+  background: oklch(0.36 0.14 45) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px oklch(0.42 0.14 45 / 0.35) !important;
+}
+.rsvp-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.625rem;
+  padding: 2.25rem 1.5rem;
+}
+.rsvp-done-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: oklch(0.94 0.06 150);
+  border: 2px solid oklch(0.6 0.12 150);
+  color: oklch(0.38 0.12 150);
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.25rem;
+}
+.rsvp-done-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: oklch(0.25 0.05 150);
+}
+.rsvp-done-msg {
+  font-size: 0.9375rem;
+  color: oklch(0.45 0.03 265);
+  margin: 0;
+  line-height: 1.6;
+}
 .rsvp-toggle { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; padding: 1.125rem 1.25rem; background: oklch(0.975 0.003 265); border: 1px solid oklch(0.92 0.005 265); border-radius: 0.875rem; margin-bottom: 1.25rem; }
 .rsvp-toggle h3 { font-size: 0.9375rem; font-weight: 650; margin: 0 0 0.25rem; }
 .rsvp-toggle p { font-size: 0.8125rem; color: oklch(0.5 0.03 265); margin: 0; }
