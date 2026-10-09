@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import photo from "@/assets/olivia-ethan-photo.jpg";
 import leafTop from "@/assets/leaf-corner-top.png";
 import leafBottom from "@/assets/leaf-corner-bottom.png";
+import { BackgroundMusic } from "@/components/invitations/BackgroundMusic";
+import { sampleInvitation } from "@/lib/invitation";
 
 export const Route = createFileRoute("/olivia-ethan")({
   head: () => ({
@@ -70,6 +72,7 @@ function OliviaEthan() {
           <p className="oe-script oe-reception" data-reveal data-fly="up">reception to follow</p>
         </div>
       </article>
+      <BackgroundMusic url={sampleInvitation.musicUrl} />
     </main>
   );
 }

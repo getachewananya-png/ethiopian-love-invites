@@ -43,7 +43,7 @@ export const inviteCopy = {
     witness: "የእርስዎችን መጀመሪያ እንጋትፍዎታለን",
     fallbackMessage: "ከቤተሰቦቻችን ጋር በአንድ ላይ፣ የቅዱስ ስምምነትንና ለዘላለም የሆነውን ፍቅር ለማስታወቂያ እንጋትፍዎታለን።",
     date: "ቀን", hour: "ሰዓት", place: "ቦታ", tba: "እስካሁን አልተታወቀም",
-    ourStory: "የእኛ ታሪክ", storyHeadline: "በጸዕይ ተጻፍቶ፣ በፍቅር የተያዘ።",
+    ourStory: "የእኛ ታሪክ", storyHeadline: "በጸጋ የተጻፈ ፣ በፍቅር የተያዘ።",
     journal: "የግብዣ መጽሐፍ · ቁጥር 01", addisCity: "አዲስ አበባ",
     addisSection: "01 / ታሪክ", addisCaption: "ለዘላለም የሚጀምረው አዲስ መጀመሪያችን።",
     addisWhen: "መቋላት", addisWhere: "ቦታ",

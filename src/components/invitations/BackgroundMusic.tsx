@@ -103,31 +103,37 @@ export function BackgroundMusic({ url, compact = false }: { url?: string | undef
         if (cancelled || !host.isConnected) return;
         const player = new YT.Player(host, {
           videoId,
-          playerVars: { autoplay: 1, mute: 1, loop: 1, playlist: videoId, controls: 0, disablekb: 1, modestbranding: 1, playsinline: 1, rel: 0 },
+          playerVars: {
+            autoplay: 1,
+            mute: 1,
+            loop: 1,
+            playlist: videoId,
+            controls: 0,
+            disablekb: 1,
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0,
+            enablejsapi: 1,
+            origin: typeof window !== "undefined" ? window.location.origin : undefined,
+          },
           events: {
             onReady: (event: { target: YTPlayer }) => {
               if (cancelled) return;
               playerRef.current = event.target;
               try {
                 event.target.setVolume(35);
-                // Autoplay with sound is blocked by browsers unless the user has
-                // interacted with the site, so start muted and unmute below.
                 event.target.mute();
                 event.target.playVideo();
                 setPlaying(true);
               } catch {
-                setFailed(true);
+                /* autoplay was blocked by browser, user click/unmute will trigger play */
               }
               setReady(true);
 
-              // 1) Some contexts (prior interaction, high media engagement,
-              //    permissions) allow sound right away -- try it.
               unmutePlayer();
-              // 2) Otherwise, the guest's first touch/scroll/keypress turns the
-              //    sound on. In practice every guest does this within a second,
-              //    so the music feels automatic while staying policy-compliant.
+
               const nudge = () => unmutePlayer();
-              const events = ["pointerdown", "touchstart", "keydown", "scroll", "wheel", "click", "mousemove"];
+              const events = ["pointerdown", "touchstart", "keydown", "scroll", "wheel", "click"];
               for (const type of events) {
                 window.addEventListener(type, nudge, { once: true, passive: true });
               }
@@ -135,7 +141,24 @@ export function BackgroundMusic({ url, compact = false }: { url?: string | undef
                 for (const type of events) window.removeEventListener(type, nudge);
               });
             },
-            onError: () => !cancelled && setFailed(true),
+            onStateChange: (event: { data: number }) => {
+              // YT.PlayerState.PLAYING = 1, PAUSED = 2, ENDED = 0
+              if (event.data === 1) {
+                setPlaying(true);
+              } else if (event.data === 2) {
+                setPlaying(false);
+              } else if (event.data === 0) {
+                try {
+                  playerRef.current?.playVideo();
+                } catch {
+                  /* ignore */
+                }
+              }
+            },
+            onError: (err: unknown) => {
+              // Log warning instead of abruptly unmounting controls so guest can still see/interact
+              console.warn("YouTube background music player error:", err);
+            },
           },
         });
       })
