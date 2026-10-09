@@ -8,7 +8,7 @@ const templateSchema = z.enum(TEMPLATE_IDS);
 const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal(""));
 /** Must be present and non-blank. Mirrors REQUIRED_BY_STEP in the builder. */
 const requiredText = (max: number) => z.string().trim().min(1).max(max);
-const invitationSchema = z.object({
+const baseInvitationObjectSchema = z.object({
   templateId: templateSchema,
   brideName: requiredText(100),
   groomName: requiredText(100),
@@ -21,8 +21,9 @@ const invitationSchema = z.object({
   rsvpEnabled: z.boolean(), rsvpDeadline: optionalText(20), customMessage: optionalText(2000), customMessageAm: optionalText(2000),
   primaryPhotoUrl: requiredText(1000), galleryImages: z.array(z.string().max(1000)).min(1).max(12), mapsUrl: z.string().url().max(1000).optional().or(z.literal("")),
   musicUrl: z.string().trim().max(1000).optional().or(z.literal("")),
-}).superRefine((value, ctx) => {
-  // The deadline only has to exist when there is an RSVP form to submit.
+});
+
+const validateRsvpDeadline = (value: { rsvpEnabled: boolean; rsvpDeadline?: string | null }, ctx: z.RefinementCtx) => {
   if (value.rsvpEnabled && !value.rsvpDeadline?.trim()) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -30,7 +31,15 @@ const invitationSchema = z.object({
       message: "An RSVP deadline is required while RSVP is enabled.",
     });
   }
-});
+};
+
+const invitationSchema = baseInvitationObjectSchema.superRefine(validateRsvpDeadline);
+
+const updateInvitationSchema = baseInvitationObjectSchema
+  .extend({
+    invitationId: z.string().uuid(),
+  })
+  .superRefine(validateRsvpDeadline);
 
 function slugify(value: string) {
   return value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 52) || "our-wedding";
@@ -118,11 +127,7 @@ export const getInvitationForEdit = createServerFn({ method: "GET" })
 
 export const updateInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((data) =>
-    invitationSchema.extend({
-      invitationId: z.string().uuid(),
-    }).parse(data),
-  )
+  .validator((data) => updateInvitationSchema.parse(data))
   .handler(async ({ context, data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { isUserAdmin } = await import("@/lib/admin");
