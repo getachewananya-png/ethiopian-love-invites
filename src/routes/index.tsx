@@ -34,7 +34,7 @@ const templates: { id: TemplateId; name: string; tag: string; description: strin
   { id: "buna-coffee", name: "Buna & Blessings", tag: "Warm · Traditional · Generous", description: "The warmth of the coffee ceremony, poured into an intimate invitation.", image: addisPhoto, className: "showcase-buna" },
   { id: "wonderland", name: "Wonderland", tag: "Ornate · Framed · Printable", description: "An ornate printed keepsake, framed in gold filigree with a portrait up top.", image: charlesPhoto, className: "showcase-wonderland" },
   { id: "traditional", name: "Traditional", tag: "Tibeb · Stepped Cross · Ceremonial", description: "Woven tibeb borders, a stepped church cross, and the coffee ceremony, as printed in the market.", image: charlesPhoto, className: "showcase-traditional" },
-  { id: "olivia-ethan", name: "Olivia & Ethan", tag: "Garden Arch · Leaf Motifs · Refined", description: "A refined garden arch layout with leaf corner motifs and classic typography.", image: oliviaPhoto, className: "showcase-olivia" },
+  { id: "olivia-ethan", name: "Garden Arch", tag: "Garden Arch · Leaf Motifs · Refined", description: "A refined garden arch layout with leaf corner motifs and classic typography.", image: oliviaPhoto, className: "showcase-olivia" },
 ];
 const priceTag = (id: TemplateId) => isPaidTemplate(id) ? `${formatEtb(TEMPLATE_PRICE_ETB[id])} · Premium` : "Free";
 

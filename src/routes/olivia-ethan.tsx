@@ -7,9 +7,9 @@ import leafBottom from "@/assets/leaf-corner-bottom.png";
 export const Route = createFileRoute("/olivia-ethan")({
   head: () => ({
     meta: [
-      { title: "Olivia & Ethan | Wedding Invitation" },
+      { title: "Garden Arch | Wedding Invitation" },
       { name: "description", content: "Join Olivia and Ethan on Saturday, 24 August 2025 at The Garden Valley Hotel, Napa Valley." },
-      { property: "og:title", content: "Olivia & Ethan | Wedding Invitation" },
+      { property: "og:title", content: "Garden Arch | Wedding Invitation" },
       { property: "og:description", content: "Join Olivia and Ethan on Saturday, 24 August 2025 at The Garden Valley Hotel, Napa Valley." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

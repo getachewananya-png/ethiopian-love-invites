@@ -42,7 +42,7 @@ export const templateMeta: Record<TemplateId, { name: string; number: string; de
   "buna-coffee": { name: "Buna & Blessings", number: "05", description: "The warmth of the coffee ceremony, poured into an intimate invitation." },
   "wonderland": { name: "Wonderland", number: "06", description: "An ornate printed keepsake, framed in gold filigree with a portrait up top." },
   traditional: { name: "Traditional", number: "07", description: "Woven tibeb borders, a stepped church cross, and the coffee ceremony, as printed in the market." },
-  "olivia-ethan": { name: "Olivia & Ethan", number: "08", description: "A refined garden arch layout with leaf corner motifs and classic typography." },
+  "olivia-ethan": { name: "Garden Arch", number: "08", description: "A refined garden arch layout with leaf corner motifs and classic typography." },
 };
 
 export const sampleInvitation: WeddingInvitation = {
