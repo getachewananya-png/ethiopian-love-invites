@@ -1,4 +1,5 @@
-import { CalendarDays, Clock3, Coffee, Globe, Heart, MapPin, Printer, Share2 } from "lucide-react";
+import { useState } from "react";
+import { CalendarDays, Clock3, Coffee, Globe, Heart, MapPin, Maximize2, Printer, Share2 } from "lucide-react";
 import royalPhoto from "@/assets/royal-couple.jpg";
 import addisPhoto from "@/assets/addis-couple.jpg";
 import romancePhoto from "@/assets/romance-couple.jpg";
@@ -18,6 +19,7 @@ import { formatWeddingDate, type TemplateId, type WeddingInvitation } from "@/li
 import { RsvpForm } from "@/components/invitations/RsvpForm";
 import { Button } from "@/components/ui/button";
 import { BackgroundMusic } from "@/components/invitations/BackgroundMusic";
+import { GalleryLightbox } from "@/components/invitations/GalleryLightbox";
 import { inviteCopy, localized, type InviteLang } from "@/lib/invite-copy";
 
 // Fallback art is only seen in previews and before a couple uploads their own
@@ -638,21 +640,40 @@ function Wonderland({
 
 function Gallery({ images, hero, lang }: { images: string[]; hero: string; lang: InviteLang }) {
   const t = inviteCopy[lang];
-  const display = images.length ? images.slice(0, 3) : [hero, hero, hero];
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const display = images.length ? images : [hero, hero, hero];
+
   return (
     <section className="invite-gallery reveal" data-reveal>
       <p className="invite-kicker">{t.galleryKicker}</p>
       <h2>{t.galleryTitle}</h2>
       <div>
         {display.map((image, index) => (
-          <img
+          <button
             key={`${image}-${index}`}
-            src={image}
-            alt={`Wedding moment ${index + 1}`}
-            loading="lazy"
-          />
+            type="button"
+            className="gallery-item-btn"
+            onClick={() => setLightboxIdx(index)}
+            aria-label={`View photo ${index + 1} fullscreen`}
+          >
+            <img
+              src={image}
+              alt={`Wedding moment ${index + 1}`}
+              loading="lazy"
+            />
+            <span className="gallery-zoom-hint" aria-hidden="true">
+              <Maximize2 size={18} />
+            </span>
+          </button>
         ))}
       </div>
+
+      <GalleryLightbox
+        images={display}
+        activeIndex={lightboxIdx}
+        onClose={() => setLightboxIdx(null)}
+        onIndexChange={setLightboxIdx}
+      />
     </section>
   );
 }
