@@ -7,6 +7,7 @@ import { getDashboard, type DashboardData } from "@/lib/dashboard.functions";
 import { signOut, useAuth } from "@/lib/auth";
 import { formatWeddingDate, templateMeta, type TemplateId } from "@/lib/invitation";
 import { isUserAdmin } from "@/lib/admin";
+import { TemplatePickerModal } from "@/components/TemplatePickerModal";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({
@@ -28,6 +29,7 @@ function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(true);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const isAdmin = Boolean(user?.email && isUserAdmin(user.email));
 
   useEffect(() => {
@@ -84,11 +86,9 @@ function DashboardPage() {
               </Link>
             </Button>
           )}
-          <Button asChild variant="outline">
-            <Link to="/create/$templateId" params={{ templateId: "royal-tewahedo" }} search={{}}>
-              <Plus />
-              New invitation
-            </Link>
+          <Button variant="outline" onClick={() => setTemplatePickerOpen(true)}>
+            <Plus />
+            New invitation
           </Button>
           <Button
             variant="ghost"
@@ -124,20 +124,34 @@ function DashboardPage() {
           <Heart />
           <h2>No invitations yet</h2>
           <p>Create your first invitation to start tracking links, opens, and RSVP replies.</p>
-          <Button asChild size="lg">
-            <Link to="/create/$templateId" params={{ templateId: "royal-tewahedo" }} search={{}}>
-              Create your invitation
-            </Link>
+          <Button size="lg" onClick={() => setTemplatePickerOpen(true)}>
+            Create your invitation
           </Button>
         </section>
       )}
 
-      {data && data.invitations.length > 0 && <DashboardBody data={data} />}
+      {data && data.invitations.length > 0 && (
+        <DashboardBody
+          data={data}
+          onNewInvitation={() => setTemplatePickerOpen(true)}
+        />
+      )}
+
+      <TemplatePickerModal
+        open={templatePickerOpen}
+        onOpenChange={setTemplatePickerOpen}
+      />
     </main>
   );
 }
 
-function DashboardBody({ data }: { data: DashboardData }) {
+function DashboardBody({
+  data,
+  onNewInvitation,
+}: {
+  data: DashboardData;
+  onNewInvitation: () => void;
+}) {
   return (
     <>
       <section className="kpi-grid">
@@ -169,8 +183,14 @@ function DashboardBody({ data }: { data: DashboardData }) {
 
       <section className="dash-invitations">
         <div className="dash-section-head">
-          <h2>Your invitations</h2>
-          <span>{data.invitations.length} total</span>
+          <div>
+            <h2>Your invitations</h2>
+            <span>{data.invitations.length} total</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={onNewInvitation}>
+            <Plus className="w-4 h-4 mr-1" />
+            New invitation
+          </Button>
         </div>
         <div className="invitation-cards">
           {data.invitations.map((invitation) => (
