@@ -649,14 +649,27 @@ label.field textarea.large,
   .ornate-frame--bottom-right { width: 112px; bottom: 16px; right: 14px; }
   .invitation-photo-wrap { height: 300px; }
 }
-/* Printing this template is the point of its design: drop the screen furniture
-   and let the sheet fill the page. */
+/* Printing: drop the screen furniture, reset margins/padding, and let the sheet fill the page symmetrically. */
 @media print {
-  .wonderland-invite .invitation-sheet { box-shadow: none; min-height: 0; width: 100%; page-break-inside: avoid; }
-  .wonderland-invite .invitation-actions,
-  .wonderland-invite .invite-gallery,
-  .wonderland-invite .invite-closing,
-  .wonderland-invite .music-controls,
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .wonderland-invite .invitation-sheet { box-shadow: none; min-height: 0; width: 100%; margin: 0 auto !important; page-break-inside: avoid; }
+  .oe-page { padding: 0 !important; min-height: 0 !important; background: transparent !important; }
+  .oe-card { box-shadow: none !important; margin: 0 auto !important; page-break-inside: avoid; }
+  .invitation-actions,
+  .invite-gallery,
+  .invite-closing,
+  .oe-story-section,
+  .music-controls,
   .invite-lang { display: none !important; }
 }
 /* ===== UPLOAD SECTIONS (builder, step 4) ===== */
@@ -2315,19 +2328,25 @@ label.field textarea.large,
   border-color: oklch(0.8 0.06 60 / 60%);
 }
 
-/* Printable card sheet styling */
+/* Printable card sheet styling - strictly zero outer margin/padding to prevent asymmetric export padding */
 .printable-card-sheet {
-  border-radius: 1rem;
-  box-shadow: 0 24px 60px -12px oklch(0 0 0 / 0.25);
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
   background-color: #ffffff !important;
   color: oklch(0.15 0.03 265);
+  box-sizing: border-box !important;
+  overflow: hidden;
 }
 .oe-card--printable {
   width: 100% !important;
   max-width: 680px !important;
-  margin: 0 auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
   box-shadow: none !important;
   aspect-ratio: 2 / 3 !important;
+  box-sizing: border-box !important;
 }
 .royal-printable-sheet,
 .addis-printable-sheet,
@@ -2335,7 +2354,9 @@ label.field textarea.large,
 .lalibela-printable-sheet,
 .buna-printable-sheet {
   box-shadow: none !important;
-  border-radius: 0.75rem;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
 
 

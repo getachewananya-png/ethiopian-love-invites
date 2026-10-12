@@ -80,12 +80,31 @@ export function PrintInvitationModal({
         })
       );
 
+      const target = cardRef.current;
+      const width = target.offsetWidth;
+      const height = target.offsetHeight;
+
       const exportFn = format === "png" ? toPng : toJpeg;
-      const dataUrl = await exportFn(cardRef.current, {
+      const dataUrl = await exportFn(target, {
+        width,
+        height,
         pixelRatio: 2,
         quality: 0.96,
         cacheBust: true,
         backgroundColor: "#ffffff",
+        style: {
+          margin: "0",
+          marginLeft: "0",
+          marginRight: "0",
+          marginTop: "0",
+          marginBottom: "0",
+          padding: "0",
+          transform: "none",
+          boxShadow: "none",
+          left: "0",
+          top: "0",
+          position: "relative",
+        },
       });
 
       const downloadLink = document.createElement("a");
@@ -126,11 +145,30 @@ export function PrintInvitationModal({
         })
       );
 
+      const target = cardRef.current;
+      const width = target.offsetWidth;
+      const height = target.offsetHeight;
+
       // Render high-res PNG and print via dedicated window for 100% pixel-perfect print
-      const dataUrl = await toPng(cardRef.current, {
+      const dataUrl = await toPng(target, {
+        width,
+        height,
         pixelRatio: 2.5,
         quality: 0.98,
         backgroundColor: "#ffffff",
+        style: {
+          margin: "0",
+          marginLeft: "0",
+          marginRight: "0",
+          marginTop: "0",
+          marginBottom: "0",
+          padding: "0",
+          transform: "none",
+          boxShadow: "none",
+          left: "0",
+          top: "0",
+          position: "relative",
+        },
       });
 
       const printWindow = window.open("", "_blank");
@@ -151,24 +189,26 @@ export function PrintInvitationModal({
             <style>
               @page {
                 size: auto;
-                margin: 8mm;
-              }
-              body {
                 margin: 0;
-                padding: 0;
+              }
+              html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100%;
+                height: 100%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                min-height: 100vh;
                 background-color: #ffffff;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
               }
               img {
-                max-width: 100%;
-                max-height: 96vh;
+                max-width: 95%;
+                max-height: 95vh;
                 object-fit: contain;
                 display: block;
+                margin: auto;
                 box-shadow: none !important;
               }
             </style>
@@ -285,22 +325,28 @@ export function PrintInvitationModal({
 
         {/* Scrollable Card Preview Container */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex items-center justify-center bg-[oklch(0.96_0.005_80)] dark:bg-neutral-900">
-          <div className="print-canvas-wrapper relative w-full flex justify-center py-2">
-            {/* The exact printable card container captured by html-to-image */}
-            <div
-              ref={cardRef}
-              className="printable-card-sheet bg-white text-foreground shadow-2xl relative overflow-hidden"
-              style={{
-                width: "min(100%, 680px)",
-                margin: "0 auto",
-                backgroundColor: "#ffffff",
-              }}
-            >
-              <PrintableCardContent
-                invitation={invitation}
-                hero={hero}
-                lang={lang}
-              />
+          <div className="print-canvas-wrapper relative flex justify-center py-2" style={{ width: "100%", margin: 0, padding: 0 }}>
+            {/* Visual shadow container for preview modal display only - not captured by html-to-image */}
+            <div className="print-preview-shadow-wrapper shadow-2xl rounded-xl overflow-hidden" style={{ margin: "0 auto", padding: 0, display: "inline-flex" }}>
+              {/* The exact printable card container captured by html-to-image - zero margins, exact sizing */}
+              <div
+                ref={cardRef}
+                className="printable-card-sheet bg-white text-foreground relative overflow-hidden"
+                style={{
+                  width: "680px",
+                  maxWidth: "100%",
+                  margin: 0,
+                  padding: 0,
+                  backgroundColor: "#ffffff",
+                  boxShadow: "none",
+                }}
+              >
+                <PrintableCardContent
+                  invitation={invitation}
+                  hero={hero}
+                  lang={lang}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -346,7 +392,7 @@ function PrintableCardContent({
     const yearNum = d.getFullYear();
 
     return (
-      <article className="oe-card oe-card--printable">
+      <article className="oe-card oe-card--printable" style={{ margin: 0, padding: 0, boxShadow: "none" }}>
         <img className="oe-leaf oe-leaf--top" src={leafTop} alt="" aria-hidden="true" />
         <img className="oe-leaf oe-leaf--bottom" src={leafBottom} alt="" aria-hidden="true" />
         <div className="oe-arch">
@@ -401,7 +447,7 @@ function PrintableCardContent({
     ) || t.fallbackMessage;
 
     return (
-      <div className="wonderland-invite" style={{ width: "100%", background: "#ffffff" }}>
+      <div className="wonderland-invite" style={{ width: "100%", margin: 0, padding: 0, background: "#ffffff" }}>
         <div className="invitation-sheet" style={{ margin: 0, width: "100%", boxShadow: "none" }}>
           <div className="invitation-frame" aria-hidden="true" />
           <img className="ornate-frame ornate-frame--top-left" src={upperFrame} alt="" aria-hidden="true" />
@@ -434,7 +480,7 @@ function PrintableCardContent({
     const message = localized(lang === "am" ? i.customMessageAm : i.customMessage, lang === "am" ? i.customMessage : i.customMessageAm) || t.fallbackMessage;
 
     return (
-      <article className="invitation royal-invite royal-printable-sheet" lang={lang} style={{ width: "100%", padding: "40px 24px" }}>
+      <article className="invitation royal-invite royal-printable-sheet" lang={lang} style={{ width: "100%", margin: 0, padding: "36px 20px", boxShadow: "none" }}>
         <section className="royal-hero" style={{ padding: 0 }}>
           <div className="royal-cross" aria-hidden="true" style={{ margin: "0 auto 12px" }}>
             <svg viewBox="0 0 48 62" focusable="false" style={{ width: 36, height: 46 }}>
@@ -498,7 +544,7 @@ function PrintableCardContent({
     const addressText = localized(lang === "am" ? i.addressAm : i.address, lang === "am" ? i.address : i.addressAm);
 
     return (
-      <article className="invitation addis-invite addis-printable-sheet" lang={lang} style={{ width: "100%", padding: "36px 28px" }}>
+      <article className="invitation addis-invite addis-printable-sheet" lang={lang} style={{ width: "100%", margin: 0, padding: "32px 24px", boxShadow: "none" }}>
         <section className="addis-hero" style={{ padding: 0 }}>
           <div className="addis-date-rail">
             <span>{new Date(`${i.weddingDate}T12:00:00`).getFullYear()}</span>
@@ -543,7 +589,7 @@ function PrintableCardContent({
     const addressText = localized(lang === "am" ? i.addressAm : i.address, lang === "am" ? i.address : i.addressAm);
 
     return (
-      <article className="invitation romance-invite romance-printable-sheet" lang={lang} style={{ width: "100%", padding: "36px 24px" }}>
+      <article className="invitation romance-invite romance-printable-sheet" lang={lang} style={{ width: "100%", margin: 0, padding: "32px 20px", boxShadow: "none" }}>
         <section className="romance-hero" style={{ padding: 0 }}>
           <p className="invite-kicker">{t.romanceKicker}</p>
           <div className="romance-photo" style={{ margin: "16px auto", maxWidth: "380px" }}>
@@ -576,7 +622,7 @@ function PrintableCardContent({
     const addressText = localized(lang === "am" ? i.addressAm : i.address, lang === "am" ? i.address : i.addressAm);
 
     return (
-      <article className="invitation lalibela-invite lalibela-printable-sheet" lang={lang} style={{ width: "100%", padding: "36px 24px" }}>
+      <article className="invitation lalibela-invite lalibela-printable-sheet" lang={lang} style={{ width: "100%", margin: 0, padding: "32px 20px", boxShadow: "none" }}>
         <section className="lalibela-hero" style={{ padding: 0, textAlign: "center" }}>
           <div className="lalibela-cross-top" aria-hidden="true" style={{ margin: "0 auto 12px" }}>
             <span style={{ fontSize: "28px", color: "oklch(0.45 0.08 45)" }}>✚</span>
@@ -610,7 +656,7 @@ function PrintableCardContent({
   const addressText = localized(lang === "am" ? i.addressAm : i.address, lang === "am" ? i.address : i.addressAm);
 
   return (
-    <article className="invitation buna-invite buna-printable-sheet" lang={lang} style={{ width: "100%", padding: "36px 24px" }}>
+    <article className="invitation buna-invite buna-printable-sheet" lang={lang} style={{ width: "100%", margin: 0, padding: "32px 20px", boxShadow: "none" }}>
       <section className="buna-hero" style={{ padding: 0, textAlign: "center" }}>
         <p className="buna-kicker" style={{ fontSize: "0.875rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "oklch(0.5 0.08 40)" }}>
           {lang === "am" ? "የፍቅር እና የበረከት ጥሪ" : "BLESSED CELEBRATION"}
