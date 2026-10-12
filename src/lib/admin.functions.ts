@@ -26,7 +26,7 @@ export const getAllInvitationsForAdmin = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { isUserAdmin } = await import("@/lib/admin");
     const { claims } = context;
-    const userEmail = (claims as Record<string, unknown> | undefined)?.email as string | undefined;
+    const userEmail = (claims as Record<string, unknown> | undefined)?.["email"] as string | undefined;
 
     if (!isUserAdmin(userEmail)) {
       throw new Error("Forbidden: Admin access required");
@@ -35,7 +35,7 @@ export const getAllInvitationsForAdmin = createServerFn({ method: "GET" })
     // Fetch all invitations
     const { data: invitations, error } = await supabaseAdmin
       .from("invitations")
-      .select("id, template_id, slug, bride_name, groom_name, wedding_date, is_published, is_paid, user_id, created_at, updated_at, views_count")
+      .select("id, template_id, slug, bride_name, groom_name, wedding_date, is_published, is_paid, user_id, created_at, updated_at, view_count")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -72,11 +72,11 @@ export const getAllInvitationsForAdmin = createServerFn({ method: "GET" })
       weddingDate: inv.wedding_date,
       isPublished: Boolean(inv.is_published),
       isPaid: Boolean(inv.is_paid),
-      userId: inv.user_id,
-      userEmail: userEmailMap[inv.user_id] ?? null,
+      userId: inv.user_id ?? "",
+      userEmail: (inv.user_id ? userEmailMap[inv.user_id] : null) ?? null,
       createdAt: inv.created_at,
       updatedAt: inv.updated_at,
-      viewCount: inv.views_count ?? 0,
+      viewCount: inv.view_count ?? 0,
       rsvpsCount: rsvpCounts[inv.id] ?? 0,
     }));
 

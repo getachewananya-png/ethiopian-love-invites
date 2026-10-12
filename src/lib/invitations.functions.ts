@@ -23,7 +23,7 @@ const baseInvitationObjectSchema = z.object({
   musicUrl: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
-const validateRsvpDeadline = (value: { rsvpEnabled: boolean; rsvpDeadline?: string | null }, ctx: z.RefinementCtx) => {
+const validateRsvpDeadline = (value: { rsvpEnabled: boolean; rsvpDeadline?: string | null | undefined }, ctx: z.RefinementCtx) => {
   if (value.rsvpEnabled && !value.rsvpDeadline?.trim()) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -110,7 +110,7 @@ export const getInvitationForEdit = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { isUserAdmin } = await import("@/lib/admin");
     const { userId, claims } = context;
-    const userEmail = (claims as Record<string, unknown> | undefined)?.email as string | undefined;
+    const userEmail = (claims as Record<string, unknown> | undefined)?.["email"] as string | undefined;
     const isAdmin = isUserAdmin(userEmail);
 
     const { data: row, error } = await supabaseAdmin
@@ -132,7 +132,7 @@ export const updateInvitation = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { isUserAdmin } = await import("@/lib/admin");
     const { userId, claims } = context;
-    const userEmail = (claims as Record<string, unknown> | undefined)?.email as string | undefined;
+    const userEmail = (claims as Record<string, unknown> | undefined)?.["email"] as string | undefined;
     const isAdmin = isUserAdmin(userEmail);
 
     const { data: existing, error: checkError } = await supabaseAdmin

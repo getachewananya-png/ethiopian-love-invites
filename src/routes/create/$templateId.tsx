@@ -17,8 +17,8 @@ import { getErrorMessage } from "@/lib/utils";
 import { sampleInvitation, TEMPLATE_IDS, templateMeta, type TemplateId, type WeddingInvitation } from "@/lib/invitation";
 
 export const Route = createFileRoute("/create/$templateId")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    edit: typeof search.edit === "string" ? search.edit : undefined,
+  validateSearch: (search: Record<string, unknown>): { edit?: string | undefined } => ({
+    edit: typeof search["edit"] === "string" ? search["edit"] : undefined,
   }),
   beforeLoad: ({ params }) => { if (!TEMPLATE_IDS.includes(params.templateId as TemplateId)) throw notFound(); },
   head: ({ params }) => ({ meta: [
@@ -123,7 +123,7 @@ function Builder() {
             customMessage: existing.custom_message ?? "",
             customMessageAm: existing.custom_message_am ?? "",
             primaryPhotoUrl: existing.primary_photo_url ?? "",
-            galleryImages: Array.isArray(existing.gallery_photos) ? existing.gallery_photos : [],
+            galleryImages: Array.isArray(existing.gallery_photos) ? (existing.gallery_photos as string[]) : [],
             mapsUrl: existing.maps_url ?? "",
             musicUrl: existing.music_url ?? "",
           });
@@ -188,7 +188,7 @@ function Builder() {
         const { updateInvitation } = await import("@/lib/invitations.functions");
         const result = await updateInvitation({ data: { ...data, invitationId: editInvitationId } });
         toast.success("Invitation updated successfully!");
-        navigate({ to: "/invite/$slug", params: { slug: result.slug } });
+        navigate({ to: "/invite/$slug", params: { slug: result.slug }, search: {} });
         return;
       }
       const result=await publishInvitation({data});

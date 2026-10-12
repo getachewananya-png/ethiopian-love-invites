@@ -8,7 +8,7 @@ import { DEFAULT_LANG, type InviteLang } from "@/lib/invite-copy";
 
 export const Route = createFileRoute("/invite/$slug")({
   loader: ({ params }) => getInvitation({ data: { slug: params.slug } }),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { token?: string | undefined } => ({
     token: typeof search["token"] === "string" ? search["token"] : undefined,
   }),
   head: ({ loaderData }) => ({ meta: [
