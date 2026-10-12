@@ -209,6 +209,50 @@ function buildTrend(
   return days;
 }
 
+export interface InvitationDetails {
+  id: string;
+  slug: string;
+  templateId: string;
+  brideName: string;
+  groomName: string;
+  weddingDate: string;
+  targetGuestCount: number;
+  viewCount: number;
+  isPublished: boolean;
+  isPaid: boolean;
+}
+
+export interface InvitationGuestsResult {
+  slug: string;
+  invitation: InvitationDetails;
+  guests: GuestRow[];
+  trend: DailyPoint[];
+}
+
+function buildSingleInvitationTrend(
+  rsvps: Array<{ created_at: string }>,
+  guests: Array<{ first_viewed_at: string | null }>,
+): DailyPoint[] {
+  const days: DailyPoint[] = [];
+  const today = new Date();
+  for (let offset = 13; offset >= 0; offset -= 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - offset);
+    days.push({ date: date.toISOString().slice(0, 10), views: 0, rsvps: 0 });
+  }
+  const index = new Map(days.map((day) => [day.date, day]));
+  for (const guest of guests) {
+    if (!guest.first_viewed_at) continue;
+    const bucket = index.get(guest.first_viewed_at.slice(0, 10));
+    if (bucket) bucket.views += 1;
+  }
+  for (const rsvp of rsvps) {
+    const bucket = index.get(rsvp.created_at.slice(0, 10));
+    if (bucket) bucket.rsvps += 1;
+  }
+  return days;
+}
+
 export const getInvitationGuests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .validator((data) => z.object({ invitationId: z.string().uuid() }).parse(data))
@@ -217,7 +261,7 @@ export const getInvitationGuests = createServerFn({ method: "GET" })
 
     const { data: invitation, error: invitationError } = await supabase
       .from("invitations")
-      .select("id, slug, user_id")
+      .select("id, slug, user_id, bride_name, groom_name, wedding_date, target_guest_count, view_count, is_published, is_paid, template_id")
       .eq("id", data.invitationId)
       .single();
     if (invitationError || !invitation) throw new Error("Invitation not found");
@@ -260,6 +304,21 @@ export const getInvitationGuests = createServerFn({ method: "GET" })
       };
     });
 
-    return { slug: invitation.slug, guests: rows };
+    const invitationDetails: InvitationDetails = {
+      id: invitation.id,
+      slug: invitation.slug,
+      templateId: invitation.template_id,
+      brideName: invitation.bride_name,
+      groomName: invitation.groom_name,
+      weddingDate: invitation.wedding_date,
+      targetGuestCount: invitation.target_guest_count,
+      viewCount: invitation.view_count,
+      isPublished: invitation.is_published,
+      isPaid: invitation.is_paid,
+    };
+
+    const trend = buildSingleInvitationTrend(rsvps ?? [], guests ?? []);
+
+    return { slug: invitation.slug, invitation: invitationDetails, guests: rows, trend } satisfies InvitationGuestsResult;
   });
 
