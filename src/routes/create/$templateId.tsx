@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, GripVertical, ImagePlus, LoaderCircle, Mail, MapPin, Phone, Share2, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, GripVertical, ImagePlus, LoaderCircle, Mail, MapPin, Phone, Printer, Share2, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { InvitationRenderer } from "@/components/invitations/InvitationRenderer";
+import { PrintInvitationModal } from "@/components/invitations/PrintInvitationModal";
 import { publishInvitation, uploadWeddingImage } from "@/lib/invitations.functions";
 import { startPaidInvitation } from "@/lib/payments.functions";
 import { isPaidTemplate, TEMPLATE_PRICE_ETB, formatEtb } from "@/lib/plans";
@@ -85,7 +86,7 @@ function Builder() {
   const editInvitationId = search.edit;
   const isEditing = Boolean(editInvitationId);
 
-  const [step,setStep]=useState(0); const [saving,setSaving]=useState(false); const [loadingEdit,setLoadingEdit]=useState(isEditing); const [success,setSuccess]=useState<string>(); const [qr,setQr]=useState<string>(); const [drag,setDrag]=useState<string|null>(null); const heroRef=useRef<HTMLInputElement>(null); const galleryRef=useRef<HTMLInputElement>(null);
+  const [step,setStep]=useState(0); const [saving,setSaving]=useState(false); const [loadingEdit,setLoadingEdit]=useState(isEditing); const [success,setSuccess]=useState<string>(); const [qr,setQr]=useState<string>(); const [drag,setDrag]=useState<string|null>(null); const [printModalOpen,setPrintModalOpen]=useState(false); const heroRef=useRef<HTMLInputElement>(null); const galleryRef=useRef<HTMLInputElement>(null);
   const storageKey=`tizita-draft-${id}`;
   const [data,setData]=useState<WeddingInvitation>(()=>({...sampleInvitation,templateId:id,brideName:"",groomName:"",brideNameAm:"",groomNameAm:"",primaryPhotoUrl:"",galleryImages:[]}));
   // Autosave must not run before the saved draft has been read back, or the
@@ -218,43 +219,165 @@ function Builder() {
   if(loadingEdit) {
     return <main className="builder-page" style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"80vh"}}><LoaderCircle className="spin" style={{marginRight:8}}/> Loading invitation...</main>;
   }
-  if(success) return <Success url={success} qr={qr}/>;
-  return <main className="builder-page"><header className="builder-header"><Button asChild variant="ghost"><Link to={isEditing ? "/dashboard" : "/"}><ArrowLeft/> {isEditing ? "Dashboard" : "Exit"}</Link></Button><div className="builder-brand"><span>ትዝታ</span><strong>{templateMeta[id].name}{isEditing ? " (Editing)" : ""}</strong></div><span className="autosave"><Check/> {isEditing ? "Editing invitation" : "Draft saved"}</span></header>
-    <div className="builder-progress"><div className="progress-top"><span>Step {step+1} of 6</span><strong>{steps[step]}</strong></div><div className="progress-track"><i style={{width:`${((step+1)/6)*100}%`}}/></div><div className="progress-labels">{steps.map((name,index)=><button key={name} className={index<=step?"active":""} onClick={()=>setStep(index)}><span>{index<step?<Check/>:index+1}</span>{name}</button>)}</div></div>
-    <div className="builder-workspace"><section className="builder-form"><div className="form-heading"><p>{String(step+1).padStart(2,"0")} / 06</p><h1>{["Tell us your names","When & where","Share your story","Add your moments","Guest replies","One last look"][step]}</h1><span>{["The names at the heart of your invitation.","Everything your guests need to arrive with ease.","A few words that sound unmistakably like you.","Choose one main portrait and your favorite memories.","Make it easy for your people to say yes.","Your invitation is ready to become real."][step]}</span></div>
-      {step===0&&<div className="form-grid"><Field label="Bride's Name"><Input value={data.brideName} onChange={e=>update("brideName",e.target.value)} placeholder="Hana Tesfaye" maxLength={100}/></Field><Field label="Groom's Name"><Input value={data.groomName} onChange={e=>update("groomName",e.target.value)} placeholder="Abebe Mekonnen" maxLength={100}/></Field><Field label="Bride's Name in Amharic"><Input lang="am" value={data.brideNameAm} onChange={e=>update("brideNameAm",e.target.value)} placeholder="ሀና ተስፋዬ" maxLength={100}/></Field><Field label="Groom's Name in Amharic"><Input lang="am" value={data.groomNameAm} onChange={e=>update("groomNameAm",e.target.value)} placeholder="አቤቤ መኮንን" maxLength={100}/></Field></div>}
-      {step===1&&<div className="form-grid"><Field label="Wedding date"><Input type="date" value={data.weddingDate} onChange={e=>update("weddingDate",e.target.value)}/></Field><Field label="Wedding time"><Input type="time" value={data.weddingTime} onChange={e=>update("weddingTime",e.target.value)}/></Field><Field label="Ceremony type"><Input value={data.ceremonyType} onChange={e=>update("ceremonyType",e.target.value)} placeholder="Ceremony & reception"/></Field><Field label="Venue"><Input value={data.venue} onChange={e=>update("venue",e.target.value)} placeholder="Hyatt Regency Addis Ababa"/></Field><Field label="Venue in Amharic"><Input lang="am" value={data.venueAm} onChange={e=>update("venueAm",e.target.value)} placeholder="ሃያት ሪጀንሲ አዲስ አበባ"/></Field><Field label="Address"><Input value={data.address} onChange={e=>update("address",e.target.value)} placeholder="Meskel Square, Addis Ababa"/></Field><Field label="Address in Amharic"><Input lang="am" value={data.addressAm} onChange={e=>update("addressAm",e.target.value)} placeholder="መስቀል አደባባይ፣ አዲስ አበባ"/></Field><Field label="Google Maps link" optional><Input type="url" value={data.mapsUrl} onChange={e=>update("mapsUrl",e.target.value)} placeholder="https://maps.google.com/..."/></Field><Field label="Background music (YouTube)" optional><Input type="url" value={data.musicUrl} onChange={e=>update("musicUrl",e.target.value)} placeholder="https://youtube.com/watch?v=..."/></Field></div>}
-      {step===2&&<div className="form-stack"><Field label="How you met"><Textarea value={data.howWeMet} onChange={e=>update("howWeMet",e.target.value)} placeholder="A chance meeting over coffee..." maxLength={2000}/></Field><Field label="Your love story"><Textarea className="large" value={data.story} onChange={e=>update("story",e.target.value)} placeholder="Tell your guests about the path that brought you here..." maxLength={5000}/></Field><Field label="Your story in Amharic"><Textarea lang="am" value={data.storyAm} onChange={e=>update("storyAm",e.target.value)} placeholder="የፍቅር ታሪካችሁን በአማርኛ ያካፍሉ..." maxLength={5000}/></Field></div>}
-      {step===3&&<div className="upload-sections">
-        {/* 1. Hero -- a single portrait-orientation photo of the couple. */}
-        <section className={`upload-card ${drag==="hero"?"dragging":""}`}>
-          <header className="upload-head"><div><h3><span className="upload-step">1</span> Main couple photo <em className="upload-required">Required</em></h3><p>This is the large photo at the top of your invitation. A portrait shot of you both works best.</p></div></header>
-          <div className="dropzone" onDragOver={(e)=>{e.preventDefault();setDrag("hero")}} onDragLeave={()=>setDrag(null)} onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"hero")}}>
-            <input ref={heroRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"hero");e.target.value=""}}/>
-            {data.primaryPhotoUrl
-              ? <div className="upload-preview tall"><img src={data.primaryPhotoUrl} alt="Main couple photo preview"/><Button type="button" variant="outline" size="sm" disabled={saving} onClick={()=>heroRef.current?.click()}>{saving?<LoaderCircle className="spin"/>:<Upload/>}Replace</Button><Button type="button" variant="ghost" size="sm" onClick={()=>update("primaryPhotoUrl","")}>Remove</Button></div>
-              : <>{saving?<LoaderCircle className="spin"/>:<ImagePlus/>}<h3>Drop your main photo here</h3><p>One photo · JPG, PNG or WebP · max 10MB</p><Button type="button" variant="outline" disabled={saving} onClick={()=>heroRef.current?.click()}>Choose photo</Button></>}
+  if(success) {
+    return (
+      <>
+        <Success url={success} qr={qr} onPrint={() => setPrintModalOpen(true)} />
+        <PrintInvitationModal
+          open={printModalOpen}
+          onOpenChange={setPrintModalOpen}
+          invitation={data}
+        />
+      </>
+    );
+  }
+  return (
+    <main className="builder-page">
+      <header className="builder-header">
+        <Button asChild variant="ghost">
+          <Link to={isEditing ? "/dashboard" : "/"}><ArrowLeft/> {isEditing ? "Dashboard" : "Exit"}</Link>
+        </Button>
+        <div className="builder-brand">
+          <span>ትዝታ</span>
+          <strong>{templateMeta[id].name}{isEditing ? " (Editing)" : ""}</strong>
+        </div>
+        <span className="autosave"><Check/> {isEditing ? "Editing invitation" : "Draft saved"}</span>
+      </header>
+
+      <div className="builder-progress">
+        <div className="progress-top">
+          <span>Step {step+1} of 6</span>
+          <strong>{steps[step]}</strong>
+        </div>
+        <div className="progress-track"><i style={{width:`${((step+1)/6)*100}%`}}/></div>
+        <div className="progress-labels">
+          {steps.map((name,index)=>(
+            <button key={name} className={index<=step?"active":""} onClick={()=>setStep(index)}>
+              <span>{index<step?<Check/>:index+1}</span>{name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="builder-workspace">
+        <section className="builder-form">
+          <div className="form-heading">
+            <p>{String(step+1).padStart(2,"0")} / 06</p>
+            <h1>{["Tell us your names","When & where","Share your story","Add your moments","Guest replies","One last look"][step]}</h1>
+            <span>{["The names at the heart of your invitation.","Everything your guests need to arrive with ease.","A few words that sound unmistakably like you.","Choose one main portrait and your favorite memories.","Make it easy for your people to say yes.","Your invitation is ready to become real."][step]}</span>
+          </div>
+
+          {step===0&&<div className="form-grid"><Field label="Bride's Name"><Input value={data.brideName} onChange={e=>update("brideName",e.target.value)} placeholder="Hana Tesfaye" maxLength={100}/></Field><Field label="Groom's Name"><Input value={data.groomName} onChange={e=>update("groomName",e.target.value)} placeholder="Abebe Mekonnen" maxLength={100}/></Field><Field label="Bride's Name in Amharic"><Input lang="am" value={data.brideNameAm} onChange={e=>update("brideNameAm",e.target.value)} placeholder="ሀና ተስፋዬ" maxLength={100}/></Field><Field label="Groom's Name in Amharic"><Input lang="am" value={data.groomNameAm} onChange={e=>update("groomNameAm",e.target.value)} placeholder="አቤቤ መኮንን" maxLength={100}/></Field></div>}
+          {step===1&&<div className="form-grid"><Field label="Wedding date"><Input type="date" value={data.weddingDate} onChange={e=>update("weddingDate",e.target.value)}/></Field><Field label="Wedding time"><Input type="time" value={data.weddingTime} onChange={e=>update("weddingTime",e.target.value)}/></Field><Field label="Ceremony type"><Input value={data.ceremonyType} onChange={e=>update("ceremonyType",e.target.value)} placeholder="Ceremony & reception"/></Field><Field label="Venue"><Input value={data.venue} onChange={e=>update("venue",e.target.value)} placeholder="Hyatt Regency Addis Ababa"/></Field><Field label="Venue in Amharic"><Input lang="am" value={data.venueAm} onChange={e=>update("venueAm",e.target.value)} placeholder="ሃያት ሪጀንሲ አዲስ አበባ"/></Field><Field label="Address"><Input value={data.address} onChange={e=>update("address",e.target.value)} placeholder="Meskel Square, Addis Ababa"/></Field><Field label="Address in Amharic"><Input lang="am" value={data.addressAm} onChange={e=>update("addressAm",e.target.value)} placeholder="መስቀል አደባባይ፣ አዲስ አበባ"/></Field><Field label="Google Maps link" optional><Input type="url" value={data.mapsUrl} onChange={e=>update("mapsUrl",e.target.value)} placeholder="https://maps.google.com/..."/></Field><Field label="Background music (YouTube)" optional><Input type="url" value={data.musicUrl} onChange={e=>update("musicUrl",e.target.value)} placeholder="https://youtube.com/watch?v=..."/></Field></div>}
+          {step===2&&<div className="form-stack"><Field label="How you met"><Textarea value={data.howWeMet} onChange={e=>update("howWeMet",e.target.value)} placeholder="A chance meeting over coffee..." maxLength={2000}/></Field><Field label="Your love story"><Textarea className="large" value={data.story} onChange={e=>update("story",e.target.value)} placeholder="Tell your guests about the path that brought you here..." maxLength={5000}/></Field><Field label="Your story in Amharic"><Textarea lang="am" value={data.storyAm} onChange={e=>update("storyAm",e.target.value)} placeholder="የፍቅር ታሪካችሁን በአማርኛ ያካፍሉ..." maxLength={5000}/></Field></div>}
+          {step===3&&<div className="upload-sections">
+            <section className={`upload-card ${drag==="hero"?"dragging":""}`}>
+              <header className="upload-head"><div><h3><span className="upload-step">1</span> Main couple photo <em className="upload-required">Required</em></h3><p>This is the large photo at the top of your invitation. A portrait shot of you both works best.</p></div></header>
+              <div className="dropzone" onDragOver={(e)=>{e.preventDefault();setDrag("hero")}} onDragLeave={()=>setDrag(null)} onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"hero")}}>
+                <input ref={heroRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"hero");e.target.value=""}}/>
+                {data.primaryPhotoUrl
+                  ? <div className="upload-preview tall"><img src={data.primaryPhotoUrl} alt="Main couple photo preview"/><Button type="button" variant="outline" size="sm" disabled={saving} onClick={()=>heroRef.current?.click()}>{saving?<LoaderCircle className="spin"/>:<Upload/>}Replace</Button><Button type="button" variant="ghost" size="sm" onClick={()=>update("primaryPhotoUrl","")}>Remove</Button></div>
+                  : <>{saving?<LoaderCircle className="spin"/>:<ImagePlus/>}<h3>Drop your main photo here</h3><p>One photo · JPG, PNG or WebP · max 10MB</p><Button type="button" variant="outline" disabled={saving} onClick={()=>heroRef.current?.click()}>Choose photo</Button></>}
+              </div>
+            </section>
+
+            <section className={`upload-card ${drag==="gallery"?"dragging":""}`}>
+              <header className="upload-head"><div><h3><span className="upload-step">2</span> Gallery photos <em className="upload-required">At least 1</em></h3><p>Moments from your engagement, the ceremony, or you both. These appear in the gallery strip.</p></div><span className="upload-count">{data.galleryImages.length} / {MAX_GALLERY_IMAGES}</span></header>
+              <div className="dropzone" onDragOver={(e)=>{e.preventDefault();setDrag("gallery")}} onDragLeave={()=>setDrag(null)} onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"gallery")}}>
+                <input ref={galleryRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"gallery");e.target.value=""}}/>
+                {saving?<LoaderCircle className="spin"/>:<Upload/>}<h3>Drop gallery photos here</h3><p>Select several at once · max 10MB each</p><Button type="button" variant="outline" disabled={saving||data.galleryImages.length>=MAX_GALLERY_IMAGES} onClick={()=>galleryRef.current?.click()}>Add photos</Button>
+              </div>
+              {data.galleryImages.length>0&&<div className="photo-grid">{data.galleryImages.map((image,index)=><PhotoRow key={image} image={image} label={`Gallery ${index+1}`} onDelete={()=>update("galleryImages",data.galleryImages.filter((_,i)=>i!==index))}/>)}</div>}
+            </section>
+          </div>}
+
+          {step===4&&<div className="form-stack"><div className="rsvp-toggle"><div><h3>Enable RSVP</h3><p>Show reply details on your invitation.</p></div><Switch checked={data.rsvpEnabled} onCheckedChange={value=>update("rsvpEnabled",value)}/></div>{data.rsvpEnabled&&<div className="form-grid"><Field label="RSVP deadline"><Input type="date" value={data.rsvpDeadline} onChange={e=>update("rsvpDeadline",e.target.value)}/></Field><Field label="Contact phone"><Input type="tel" value={data.phone} onChange={e=>update("phone",e.target.value)} placeholder="+251 911 234 567"/></Field><Field label="Contact email"><Input type="email" value={data.email} onChange={e=>update("email",e.target.value)} placeholder="hello@example.com"/></Field><Field label="Closing message" optional><Textarea value={data.customMessage} onChange={e=>update("customMessage",e.target.value)} placeholder="With joyful hearts..."/></Field></div>}</div>}
+
+          {step===5&& (
+            <div className="review-section-wrap">
+              <div className="review-list">
+                <Review icon={HeartIcon} label="Couple" value={`${data.brideName} & ${data.groomName}`} onEdit={()=>setStep(0)}/>
+                <Review icon={CalendarDays} label="Wedding" value={`${data.weddingDate} · ${data.weddingTime}`} onEdit={()=>setStep(1)}/>
+                <Review icon={MapPin} label="Venue" value={data.venue||"Not added"} onEdit={()=>setStep(1)}/>
+                <Review icon={ImagePlus} label="Photos" value={`${(data.primaryPhotoUrl?1:0)+data.galleryImages.length} uploaded`} onEdit={()=>setStep(3)}/>
+                <Review icon={Phone} label="RSVP" value={data.rsvpEnabled?(data.phone||data.email||"Enabled"):"Disabled"} onEdit={()=>setStep(4)}/>
+              </div>
+
+              {/* Print / Save to Image Option */}
+              <div className="print-design-card">
+                <div className="print-design-info">
+                  <div className="print-icon-circle">
+                    <Printer className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3>Print &amp; Export Your Design</h3>
+                    <p>Download a high-resolution image (PNG / JPG) looking exactly like your design, or print directly to paper or PDF.</p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPrintModalOpen(true)}
+                  className="btn-print-trigger"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Design to Image
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="form-navigation">
+            <Button variant="outline" disabled={step===0||saving} onClick={()=>setStep(step-1)}><ArrowLeft/>Back</Button>
+            {step === 5 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPrintModalOpen(true)}
+                className="btn-nav-print"
+              >
+                <Printer className="w-4 h-4 mr-1.5" />
+                Print to Image
+              </Button>
+            )}
+            {step<5?<Button onClick={next}>Continue<ArrowRight/></Button>:<Button onClick={publish} disabled={saving}>{saving?<LoaderCircle className="spin"/>:<Share2/>}{isEditing ? "Save Changes" : (paid?`Continue to payment · ${formatEtb(TEMPLATE_PRICE_ETB[id])}`:"Generate My Invitation")}</Button>}
           </div>
         </section>
 
-        {/* 2. Gallery -- up to MAX_GALLERY_IMAGES moments from the day. */}
-        <section className={`upload-card ${drag==="gallery"?"dragging":""}`}>
-          <header className="upload-head"><div><h3><span className="upload-step">2</span> Gallery photos <em className="upload-required">At least 1</em></h3><p>Moments from your engagement, the ceremony, or you both. These appear in the gallery strip.</p></div><span className="upload-count">{data.galleryImages.length} / {MAX_GALLERY_IMAGES}</span></header>
-          <div className="dropzone" onDragOver={(e)=>{e.preventDefault();setDrag("gallery")}} onDragLeave={()=>setDrag(null)} onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"gallery")}}>
-            <input ref={galleryRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"gallery");e.target.value=""}}/>
-            {saving?<LoaderCircle className="spin"/>:<Upload/>}<h3>Drop gallery photos here</h3><p>Select several at once · max 10MB each</p><Button type="button" variant="outline" disabled={saving||data.galleryImages.length>=MAX_GALLERY_IMAGES} onClick={()=>galleryRef.current?.click()}>Add photos</Button>
+        <aside className="live-preview">
+          <div className="preview-label">
+            <div><span>LIVE PREVIEW</span><i/></div>
+            <strong>{templateMeta[id].name}</strong>
+            {paid && <em className="tier-badge paid">{formatEtb(TEMPLATE_PRICE_ETB[id])} · Premium</em>}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs px-2.5 ml-auto"
+              onClick={() => setPrintModalOpen(true)}
+              title="Print or export as image"
+            >
+              <Printer className="w-3.5 h-3.5 mr-1" />
+              Print
+            </Button>
           </div>
-          {data.galleryImages.length>0&&<div className="photo-grid">{data.galleryImages.map((image,index)=><PhotoRow key={image} image={image} label={`Gallery ${index+1}`} onDelete={()=>update("galleryImages",data.galleryImages.filter((_,i)=>i!==index))}/>)}</div>}
-        </section>
-      </div>}
-      {step===4&&<div className="form-stack"><div className="rsvp-toggle"><div><h3>Enable RSVP</h3><p>Show reply details on your invitation.</p></div><Switch checked={data.rsvpEnabled} onCheckedChange={value=>update("rsvpEnabled",value)}/></div>{data.rsvpEnabled&&<div className="form-grid"><Field label="RSVP deadline"><Input type="date" value={data.rsvpDeadline} onChange={e=>update("rsvpDeadline",e.target.value)}/></Field><Field label="Contact phone"><Input type="tel" value={data.phone} onChange={e=>update("phone",e.target.value)} placeholder="+251 911 234 567"/></Field><Field label="Contact email"><Input type="email" value={data.email} onChange={e=>update("email",e.target.value)} placeholder="hello@example.com"/></Field><Field label="Closing message" optional><Textarea value={data.customMessage} onChange={e=>update("customMessage",e.target.value)} placeholder="With joyful hearts..."/></Field></div>}</div>}
-      {step===5&&<div className="review-list"><Review icon={HeartIcon} label="Couple" value={`${data.brideName} & ${data.groomName}`} onEdit={()=>setStep(0)}/><Review icon={CalendarDays} label="Wedding" value={`${data.weddingDate} · ${data.weddingTime}`} onEdit={()=>setStep(1)}/><Review icon={MapPin} label="Venue" value={data.venue||"Not added"} onEdit={()=>setStep(1)}/><Review icon={ImagePlus} label="Photos" value={`${(data.primaryPhotoUrl?1:0)+data.galleryImages.length} uploaded`} onEdit={()=>setStep(3)}/><Review icon={Phone} label="RSVP" value={data.rsvpEnabled?(data.phone||data.email||"Enabled"):"Disabled"} onEdit={()=>setStep(4)}/></div>}
-      <div className="form-navigation"><Button variant="outline" disabled={step===0||saving} onClick={()=>setStep(step-1)}><ArrowLeft/>Back</Button>{step<5?<Button onClick={next}>Continue<ArrowRight/></Button>:<Button onClick={publish} disabled={saving}>{saving?<LoaderCircle className="spin"/>:<Share2/>}{isEditing ? "Save Changes" : (paid?`Continue to payment · ${formatEtb(TEMPLATE_PRICE_ETB[id])}`:"Generate My Invitation")}</Button>}</div>
-    </section><aside className="live-preview"><div className="preview-label"><div><span>LIVE PREVIEW</span><i/></div><strong>{templateMeta[id].name}</strong>{paid && <em className="tier-badge paid">{formatEtb(TEMPLATE_PRICE_ETB[id])} · Premium</em>}</div><div className="phone-preview"><InvitationRenderer invitation={data} compact/></div></aside></div></main>;
+          <div className="phone-preview">
+            <InvitationRenderer invitation={data} compact/>
+          </div>
+        </aside>
+      </div>
+
+      <PrintInvitationModal
+        open={printModalOpen}
+        onOpenChange={setPrintModalOpen}
+        invitation={data}
+      />
+    </main>
+  );
 }
 function Field({label,children,optional}:{label:string;children:React.ReactNode;optional?:boolean}){return <Label className="field"><span>{label}{optional?<em className="field-optional">Optional</em>:<em className="field-required">Required</em>}</span>{children}</Label>}
 function PhotoRow({image,label,onDelete}:{image:string;label:string;onDelete:()=>void}){return <div className="photo-row"><GripVertical/><img src={image} alt="Upload preview"/><span>{label}</span><button type="button" onClick={onDelete} aria-label={`Remove ${label}`}><Trash2/></button></div>}
 function Review({icon:Icon,label,value,onEdit}:{icon:React.ComponentType<{className?:string}>;label:string;value:string;onEdit:()=>void}){return <div className="review-item"><Icon/><div><span>{label}</span><strong>{value}</strong></div><button onClick={onEdit}>Edit</button></div>}
 function HeartIcon(){return <span className="review-heart">♥</span>}
 function fileToBase64(file:File){return new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(",")[1]??"");reader.onerror=reject;reader.readAsDataURL(file)})}
-function Success({url,qr}:{url:string;qr?:string|undefined}){const copy=()=>navigator.clipboard.writeText(url).then(()=>toast.success("Invitation link copied"));return <main className="success-page"><div className="success-mark"><Check/></div><p>READY TO SHARE</p><h1>Your Invitation<br/><em>Is Ready!</em></h1><span>Your wedding invitation has been created. Share it with everyone you love.</span><div className="link-box"><div><small>Your Invitation Link</small><strong>{url}</strong></div><button onClick={copy} aria-label="Copy invitation link"><Copy/></button></div><div className="success-actions"><Button asChild size="lg"><a href={url}>Open Invitation</a></Button><Button variant="outline" size="lg" onClick={copy}><Copy/>Copy Link</Button></div><div className="share-row"><a href={`https://wa.me/?text=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">WhatsApp</a><a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">Facebook</a><a href={`https://t.me/share/url?url=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">Telegram</a>{qr&&<a href={qr} download="wedding-invitation-qr.png">Download QR</a>}</div>{qr&&<img className="qr-code" src={qr} alt="Invitation QR code"/>}<Button asChild variant="ghost"><Link to="/">Return to Tizita</Link></Button></main>}
+function Success({url,qr,onPrint}:{url:string;qr?:string|undefined;onPrint?:(()=>void)|undefined}){const copy=()=>navigator.clipboard.writeText(url).then(()=>toast.success("Invitation link copied"));return <main className="success-page"><div className="success-mark"><Check/></div><p>READY TO SHARE</p><h1>Your Invitation<br/><em>Is Ready!</em></h1><span>Your wedding invitation has been created. Share it with everyone you love.</span><div className="link-box"><div><small>Your Invitation Link</small><strong>{url}</strong></div><button onClick={copy} aria-label="Copy invitation link"><Copy/></button></div><div className="success-actions"><Button asChild size="lg"><a href={url}>Open Invitation</a></Button><Button variant="outline" size="lg" onClick={copy}><Copy/>Copy Link</Button>{onPrint&&<Button variant="outline" size="lg" onClick={onPrint}><Printer className="w-4 h-4 mr-2"/>Print / Save Image</Button>}</div><div className="share-row"><a href={`https://wa.me/?text=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">WhatsApp</a><a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">Facebook</a><a href={`https://t.me/share/url?url=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">Telegram</a>{qr&&<a href={qr} download="wedding-invitation-qr.png">Download QR</a>}</div>{qr&&<img className="qr-code" src={qr} alt="Invitation QR code"/>}<Button asChild variant="ghost"><Link to="/">Return to Tizita</Link></Button></main>}

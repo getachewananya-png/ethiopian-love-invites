@@ -2243,4 +2243,100 @@ label.field textarea.large,
   font-size: 0.75rem;
 }
 
+/* ===== PRINT DESIGN CARD (Builder Step 5) ===== */
+.review-section-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.print-design-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, oklch(0.985 0.015 85) 0%, oklch(0.96 0.025 65) 100%);
+  border: 1px solid oklch(0.85 0.06 65 / 45%);
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px oklch(0 0 0 / 0.04);
+}
+@media (min-width: 640px) {
+  .print-design-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.dark .print-design-card {
+  background: linear-gradient(135deg, oklch(0.2 0.02 60) 0%, oklch(0.17 0.02 40) 100%);
+  border-color: oklch(0.35 0.04 60 / 50%);
+}
+.print-design-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+.print-icon-circle {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: white;
+  border: 1px solid oklch(0.88 0.04 60 / 60%);
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.05);
+  flex-shrink: 0;
+}
+.dark .print-icon-circle {
+  background: oklch(0.25 0.02 60);
+  border-color: oklch(0.4 0.04 60);
+}
+.print-design-info h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--foreground);
+}
+.print-design-info p {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  max-width: 440px;
+}
+.btn-print-trigger {
+  flex-shrink: 0;
+  font-weight: 600;
+  border-color: oklch(0.8 0.06 60);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.05);
+}
+.btn-nav-print {
+  font-weight: 600;
+  border-color: oklch(0.8 0.06 60 / 60%);
+}
+
+/* Printable card sheet styling */
+.printable-card-sheet {
+  border-radius: 1rem;
+  box-shadow: 0 24px 60px -12px oklch(0 0 0 / 0.25);
+  background-color: #ffffff !important;
+  color: oklch(0.15 0.03 265);
+}
+.oe-card--printable {
+  width: 100% !important;
+  max-width: 680px !important;
+  margin: 0 auto !important;
+  box-shadow: none !important;
+  aspect-ratio: 2 / 3 !important;
+}
+.royal-printable-sheet,
+.addis-printable-sheet,
+.romance-printable-sheet,
+.lalibela-printable-sheet,
+.buna-printable-sheet {
+  box-shadow: none !important;
+  border-radius: 0.75rem;
+}
+
+
 
