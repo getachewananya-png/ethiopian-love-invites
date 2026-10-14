@@ -38,6 +38,8 @@ export interface WeddingInvitation {
   musicUrl?: string;
   /** Reference image uploaded by couple for custom AI template building */
   referenceImageUrl?: string;
+  /** Original unstyled hero photo uploaded by couple to be restyled by AI */
+  rawHeroPhotoUrl?: string;
   /** Optional custom theme/style extracted from reference design */
   aiStylePreset?: string;
   createdAt?: string;

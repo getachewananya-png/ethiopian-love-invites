@@ -97,11 +97,20 @@ function missingForStep(step: number, d: WeddingInvitation): string[] {
     if (typeof value !== "string" || !value.trim()) missing.push(field.label);
   }
   if (step === 3) {
-    if (!d.primaryPhotoUrl?.trim()) {
-      missing.push(d.templateId === "custom-ai" ? "Reference design or hero artwork" : "Main couple photo");
-    }
-    if (!d.galleryImages.length && d.templateId !== "custom-ai") {
-      missing.push("At least one gallery photo");
+    if (d.templateId === "custom-ai") {
+      if (!d.referenceImageUrl?.trim()) {
+        missing.push("Picture 1: Reference style picture");
+      }
+      if (!d.rawHeroPhotoUrl?.trim() && !d.primaryPhotoUrl?.trim()) {
+        missing.push("Picture 2: Hero section couple picture");
+      }
+    } else {
+      if (!d.primaryPhotoUrl?.trim()) {
+        missing.push("Main couple photo");
+      }
+      if (!d.galleryImages.length) {
+        missing.push("At least one gallery photo");
+      }
     }
   }
   return missing;
@@ -116,6 +125,7 @@ function Builder() {
 
   const [step,setStep]=useState(0); const [saving,setSaving]=useState(false); const [loadingEdit,setLoadingEdit]=useState(isEditing); const [success,setSuccess]=useState<string>(); const [qr,setQr]=useState<string>(); const [drag,setDrag]=useState<string|null>(null); const [printModalOpen,setPrintModalOpen]=useState(false); const heroRef=useRef<HTMLInputElement>(null); const galleryRef=useRef<HTMLInputElement>(null);
   const referenceRef=useRef<HTMLInputElement>(null);
+  const couplePhotoRef=useRef<HTMLInputElement>(null);
   const [generatingAiHero, setGeneratingAiHero] = useState(false);
   const [extractedPalette, setExtractedPalette] = useState<ExtractedPalette | null>(null);
   const storageKey=`tizita-draft-${id}`;
@@ -199,6 +209,9 @@ function Builder() {
         if (toSave.referenceImageUrl && toSave.referenceImageUrl.length > 300000) {
           toSave.referenceImageUrl = "";
         }
+        if (toSave.rawHeroPhotoUrl && toSave.rawHeroPhotoUrl.length > 300000) {
+          toSave.rawHeroPhotoUrl = "";
+        }
         if (toSave.primaryPhotoUrl && toSave.primaryPhotoUrl.startsWith("data:") && toSave.primaryPhotoUrl.length > 300000) {
           toSave.primaryPhotoUrl = "";
         }
@@ -232,7 +245,7 @@ function Builder() {
       setData((curr) => ({ ...curr, referenceImageUrl: dataUrl }));
       const palette = await extractReferencePalette(dataUrl);
       setExtractedPalette(palette);
-      toast.success("Reference design analyzed! Now click 'Generate AI Hero Artwork'.");
+      toast.success("Picture 1 (Reference) analyzed! Now upload Picture 2 (Couple Photo).");
     } catch (err) {
       console.error("Reference upload error:", err);
       toast.error("Could not process reference design image");
@@ -241,7 +254,44 @@ function Builder() {
     }
   };
 
+  const handleRawHeroFile = async (files: FileList | File[]) => {
+    const file = Array.from(files)[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error(`${file.name} is not a supported image.`);
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error(`${file.name} is over 15MB.`);
+      return;
+    }
+    setSaving(true);
+    try {
+      const dataUrl = await compressImageToDataUrl(file, 800, 0.82);
+      setData((curr) => ({
+        ...curr,
+        rawHeroPhotoUrl: dataUrl,
+        primaryPhotoUrl: curr.primaryPhotoUrl || dataUrl,
+      }));
+      toast.success("Picture 2 (Couple Photo) uploaded! Ready to regenerate in reference style.");
+    } catch (err) {
+      console.error("Hero upload error:", err);
+      toast.error("Could not process couple photo");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleGenerateAiHero = async () => {
+    const heroPic = data.rawHeroPhotoUrl || data.primaryPhotoUrl;
+    if (!data.referenceImageUrl) {
+      toast.error("Please upload Picture 1 (Reference Design Picture) first.");
+      return;
+    }
+    if (!heroPic) {
+      toast.error("Please upload Picture 2 (Hero Section Couple Picture) first.");
+      return;
+    }
     setGeneratingAiHero(true);
     try {
       // 1. Attempt generation via Google Gemini (Gemini 2.0 Flash Vision + Imagen 3)
@@ -253,6 +303,7 @@ function Builder() {
             weddingDate: data.weddingDate || "2025-08-24",
             venue: data.venue || "Addis Ababa",
             referenceImageDataUrl: data.referenceImageUrl,
+            heroImageDataUrl: heroPic,
           },
         });
 
@@ -261,7 +312,7 @@ function Builder() {
             ...curr,
             primaryPhotoUrl: geminiRes.imageUrl!,
           }));
-          toast.success("✨ Brand-new AI wedding artwork generated with Google Gemini!");
+          toast.success("✨ Hero section photo regenerated with the style of your reference picture!");
           return;
         }
 
@@ -281,17 +332,17 @@ function Builder() {
         weddingDate: data.weddingDate || "2025-08-24",
         venue: data.venue || "Addis Ababa",
         referenceImageDataUrl: data.referenceImageUrl,
-        couplePhotoDataUrl: data.primaryPhotoUrl && !data.primaryPhotoUrl.startsWith("data:") ? data.primaryPhotoUrl : undefined,
+        couplePhotoDataUrl: heroPic,
       });
 
       setData((curr) => ({
         ...curr,
         primaryPhotoUrl: artwork,
       }));
-      toast.success("✨ Custom hero section artwork synthesized from your reference design!");
+      toast.success("✨ Hero section photo restyled with your reference design's palette and aesthetics!");
     } catch (err) {
       console.error("AI hero generation error:", err);
-      toast.error("Could not generate hero artwork. Please try again.");
+      toast.error("Could not regenerate hero artwork. Please try again.");
     } finally {
       setGeneratingAiHero(false);
     }
@@ -411,74 +462,404 @@ function Builder() {
           {step===1&&<div className="form-grid"><Field label="Wedding date"><Input type="date" value={data.weddingDate} onChange={e=>update("weddingDate",e.target.value)}/></Field><Field label="Wedding time"><Input type="time" value={data.weddingTime} onChange={e=>update("weddingTime",e.target.value)}/></Field><Field label="Ceremony type"><Input value={data.ceremonyType} onChange={e=>update("ceremonyType",e.target.value)} placeholder="Ceremony & reception"/></Field><Field label="Venue"><Input value={data.venue} onChange={e=>update("venue",e.target.value)} placeholder="Hyatt Regency Addis Ababa"/></Field><Field label="Venue in Amharic"><Input lang="am" value={data.venueAm} onChange={e=>update("venueAm",e.target.value)} placeholder="ሃያት ሪጀንሲ አዲስ አበባ"/></Field><Field label="Address"><Input value={data.address} onChange={e=>update("address",e.target.value)} placeholder="Meskel Square, Addis Ababa"/></Field><Field label="Address in Amharic"><Input lang="am" value={data.addressAm} onChange={e=>update("addressAm",e.target.value)} placeholder="መስቀል አደባባይ፣ አዲስ አበባ"/></Field><Field label="Google Maps link" optional><Input type="url" value={data.mapsUrl} onChange={e=>update("mapsUrl",e.target.value)} placeholder="https://maps.google.com/..."/></Field><Field label="Background music (YouTube)" optional><Input type="url" value={data.musicUrl} onChange={e=>update("musicUrl",e.target.value)} placeholder="https://youtube.com/watch?v=..."/></Field></div>}
           {step===2&&<div className="form-stack"><Field label="How you met"><Textarea value={data.howWeMet} onChange={e=>update("howWeMet",e.target.value)} placeholder="A chance meeting over coffee..." maxLength={2000}/></Field><Field label="Your love story"><Textarea className="large" value={data.story} onChange={e=>update("story",e.target.value)} placeholder="Tell your guests about the path that brought you here..." maxLength={5000}/></Field><Field label="Your story in Amharic"><Textarea lang="am" value={data.storyAm} onChange={e=>update("storyAm",e.target.value)} placeholder="የፍቅር ታሪካችሁን በአማርኛ ያካፍሉ..." maxLength={5000}/></Field></div>}
           {step===3&&<div className="upload-sections">
-            {/* AI Custom Template Reference & Hero Generator Section */}
-            {(id === "custom-ai" || data.referenceImageUrl) && (
-              <section className="upload-card ai-generator-card">
-                <header className="upload-head">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wider uppercase bg-primary/15 text-primary">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        AI Reference Design
-                      </span>
+            {id === "custom-ai" ? (
+              <div className="space-y-6">
+                {/* 2-Picture AI Restyling Studio */}
+                <section className="upload-card ai-generator-card">
+                  <header className="upload-head">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wider uppercase bg-primary/15 text-primary">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          AI Style Transfer Studio
+                        </span>
+                      </div>
+                      <h3>Regenerate Hero Picture with Reference Style</h3>
+                      <p>
+                        Upload <strong>two pictures</strong> below: <strong>Picture 1</strong> (Reference Design for color, mood &amp; textures) and <strong>Picture 2</strong> (Couple Photo). Google Gemini will analyze both pictures and regenerate the couple's hero picture in the exact style of your reference picture.
+                      </p>
                     </div>
-                    <h3>Reference Design Image &amp; AI Hero Generator</h3>
-                    <p>
-                      Upload a photo of an invitation design, pattern, or aesthetic you love. Our AI analyzes its color palette and composes a custom hero section artwork.
-                    </p>
-                  </div>
-                </header>
+                  </header>
 
-                <div className="ai-ref-container space-y-4">
-                  {/* Reference Image Dropzone */}
-                  <div
-                    className={`dropzone ${drag === "reference" ? "dragging" : ""}`}
-                    onDragOver={(e) => { e.preventDefault(); setDrag("reference"); }}
-                    onDragLeave={() => setDrag(null)}
-                    onDrop={(e: DragEvent) => {
-                      e.preventDefault();
-                      setDrag(null);
-                      if (e.dataTransfer.files) void handleReferenceFile(e.dataTransfer.files);
-                    }}
-                  >
-                    <input
-                      ref={referenceRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      hidden
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                        e.target.files && void handleReferenceFile(e.target.files);
-                        e.target.value = "";
-                      }}
-                    />
-                    {data.referenceImageUrl ? (
-                      <div className="upload-preview flex flex-col items-center gap-2 py-2">
-                        <div className="relative rounded-lg overflow-hidden border border-border shadow-sm max-h-48 max-w-xs">
+                  <div className="ai-ref-container space-y-6 p-1">
+                    {/* 2-Picture Upload Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Picture 1: Reference Design Picture */}
+                      <div className="border border-border/80 rounded-xl p-4 bg-background/50 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-semibold text-sm flex items-center gap-2 text-foreground">
+                              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-bold">1</span>
+                              Picture 1: Reference Picture
+                            </span>
+                            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                              Style &amp; Colors
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            The card, aesthetic, or pattern to mimic (no crosses or religious symbols).
+                          </p>
+                        </div>
+
+                        <div
+                          className={`dropzone ${drag === "reference" ? "dragging" : ""}`}
+                          onDragOver={(e) => { e.preventDefault(); setDrag("reference"); }}
+                          onDragLeave={() => setDrag(null)}
+                          onDrop={(e: DragEvent) => {
+                            e.preventDefault();
+                            setDrag(null);
+                            if (e.dataTransfer.files) void handleReferenceFile(e.dataTransfer.files);
+                          }}
+                        >
+                          <input
+                            ref={referenceRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            hidden
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                              e.target.files && void handleReferenceFile(e.target.files);
+                              e.target.value = "";
+                            }}
+                          />
+                          {data.referenceImageUrl ? (
+                            <div className="upload-preview flex flex-col items-center gap-2 py-2">
+                              <div className="relative rounded-lg overflow-hidden border border-border shadow-sm max-h-48 max-w-xs">
+                                <img
+                                  src={data.referenceImageUrl}
+                                  alt="Reference design preview"
+                                  className="object-cover max-h-48 w-auto rounded-lg"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={saving || generatingAiHero}
+                                  onClick={() => referenceRef.current?.click()}
+                                >
+                                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                                  Change Picture 1
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    update("referenceImageUrl", "");
+                                    setExtractedPalette(null);
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              {saving ? <LoaderCircle className="spin" /> : <Wand2 className="w-8 h-8 text-primary" />}
+                              <h4 className="font-semibold text-sm mt-1">Upload Reference Picture</h4>
+                              <p className="text-xs text-muted-foreground">JPG, PNG or WebP · max 15MB</p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={saving || generatingAiHero}
+                                onClick={() => referenceRef.current?.click()}
+                              >
+                                Choose Picture 1
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Picture 2: Hero Section Couple Picture */}
+                      <div className="border border-border/80 rounded-xl p-4 bg-background/50 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-semibold text-sm flex items-center gap-2 text-foreground">
+                              <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-bold">2</span>
+                              Picture 2: Couple Hero Picture
+                            </span>
+                            <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full">
+                              The Couple
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            The couple photo to be restyled into the reference picture's aesthetic.
+                          </p>
+                        </div>
+
+                        <div
+                          className={`dropzone ${drag === "couple" ? "dragging" : ""}`}
+                          onDragOver={(e) => { e.preventDefault(); setDrag("couple"); }}
+                          onDragLeave={() => setDrag(null)}
+                          onDrop={(e: DragEvent) => {
+                            e.preventDefault();
+                            setDrag(null);
+                            if (e.dataTransfer.files) void handleRawHeroFile(e.dataTransfer.files);
+                          }}
+                        >
+                          <input
+                            ref={couplePhotoRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            hidden
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                              e.target.files && void handleRawHeroFile(e.target.files);
+                              e.target.value = "";
+                            }}
+                          />
+                          {data.rawHeroPhotoUrl || (data.primaryPhotoUrl && !data.primaryPhotoUrl.startsWith("data:image/svg") && !generatingAiHero) ? (
+                            <div className="upload-preview flex flex-col items-center gap-2 py-2">
+                              <div className="relative rounded-lg overflow-hidden border border-border shadow-sm max-h-48 max-w-xs">
+                                <img
+                                  src={data.rawHeroPhotoUrl || data.primaryPhotoUrl}
+                                  alt="Couple photo preview"
+                                  className="object-cover max-h-48 w-auto rounded-lg"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={saving || generatingAiHero}
+                                  onClick={() => couplePhotoRef.current?.click()}
+                                >
+                                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                                  Change Picture 2
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    update("rawHeroPhotoUrl", "");
+                                    if (data.primaryPhotoUrl === data.rawHeroPhotoUrl) {
+                                      update("primaryPhotoUrl", "");
+                                    }
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              {saving ? <LoaderCircle className="spin" /> : <ImagePlus className="w-8 h-8 text-primary" />}
+                              <h4 className="font-semibold text-sm mt-1">Upload Couple Photo</h4>
+                              <p className="text-xs text-muted-foreground">Portrait photo of couple · max 15MB</p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={saving || generatingAiHero}
+                                onClick={() => couplePhotoRef.current?.click()}
+                              >
+                                Choose Picture 2
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Extracted Palette Display (if analyzed) */}
+                    {extractedPalette && (
+                      <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <Palette className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-semibold">Analyzed Palette from Reference:</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {[
+                            { label: "Primary", col: extractedPalette.primary },
+                            { label: "Secondary", col: extractedPalette.secondary },
+                            { label: "Accent", col: extractedPalette.accent },
+                            { label: "Background", col: extractedPalette.background },
+                          ].map((chip) => (
+                            <div
+                              key={chip.label}
+                              className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white dark:bg-card border border-border shadow-xs"
+                              title={`${chip.label}: ${chip.col}`}
+                            >
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0"
+                                style={{ backgroundColor: chip.col }}
+                              />
+                              <span className="text-[11px] font-mono text-muted-foreground">{chip.col}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Regenerate Action Button */}
+                    <div className="pt-2">
+                      <Button
+                        type="button"
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-amber-600 via-primary to-rose-600 text-white font-semibold shadow-md hover:opacity-95 transition-opacity py-6 text-base"
+                        disabled={generatingAiHero || saving || !data.referenceImageUrl || !(data.rawHeroPhotoUrl || data.primaryPhotoUrl)}
+                        onClick={() => void handleGenerateAiHero()}
+                      >
+                        {generatingAiHero ? (
+                          <>
+                            <LoaderCircle className="w-5 h-5 mr-2 animate-spin" />
+                            Regenerating Hero Picture with Reference Style...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-5 h-5 mr-2" />
+                            Regenerate Hero Picture with Reference Style
+                          </>
+                        )}
+                      </Button>
+                      {!data.referenceImageUrl || !(data.rawHeroPhotoUrl || data.primaryPhotoUrl) ? (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2 font-medium">
+                          ⚠️ Please upload both Picture 1 (Reference) and Picture 2 (Couple Photo) before regenerating.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground text-center mt-2">
+                          Google Gemini takes both images and regenerates the hero picture restyled into the reference picture's aesthetic.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Regenerated Hero Result Preview */}
+                    {data.primaryPhotoUrl && (
+                      <div className="border border-emerald-500/30 rounded-xl p-4 bg-emerald-50/20 dark:bg-emerald-950/10">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <h4 className="font-semibold text-sm text-foreground">Regenerated Hero Picture Preview</h4>
+                          </div>
+                          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
+                            Active Hero Section
+                          </span>
+                        </div>
+                        <div className="relative rounded-lg overflow-hidden border border-border shadow-md max-h-96 max-w-md mx-auto">
                           <img
-                            src={data.referenceImageUrl}
-                            alt="Reference design preview"
-                            className="object-cover max-h-48 w-auto rounded-lg"
+                            src={data.primaryPhotoUrl}
+                            alt="Regenerated hero artwork"
+                            className="w-full h-auto object-cover max-h-96"
                           />
                         </div>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center justify-center gap-2 mt-3">
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={saving || generatingAiHero}
-                            onClick={() => referenceRef.current?.click()}
+                            disabled={generatingAiHero || saving}
+                            onClick={() => void handleGenerateAiHero()}
                           >
-                            <Upload className="w-3.5 h-3.5 mr-1.5" />
-                            Change Reference Image
+                            {generatingAiHero ? <LoaderCircle className="spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+                            Regenerate Again
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* Additional Gallery Photos (Optional) */}
+                <section className={`upload-card ${drag==="gallery"?"dragging":""}`}>
+                  <header className="upload-head">
+                    <div>
+                      <h3>
+                        <span className="upload-step">3</span> Additional Gallery Photos{" "}
+                        <em className="upload-optional text-xs font-normal text-muted-foreground">(Optional)</em>
+                      </h3>
+                      <p>Moments from your engagement or ceremony to display in your invitation gallery.</p>
+                    </div>
+                    <span className="upload-count">{data.galleryImages.length} / {MAX_GALLERY_IMAGES}</span>
+                  </header>
+                  <div
+                    className="dropzone"
+                    onDragOver={(e)=>{e.preventDefault();setDrag("gallery")}}
+                    onDragLeave={()=>setDrag(null)}
+                    onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"gallery")}}
+                  >
+                    <input
+                      ref={galleryRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      hidden
+                      onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"gallery");e.target.value=""}}
+                    />
+                    {saving?<LoaderCircle className="spin"/>:<Upload/>}
+                    <h3>Drop gallery photos here</h3>
+                    <p>Select several at once · max 10MB each</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={saving||data.galleryImages.length>=MAX_GALLERY_IMAGES}
+                      onClick={()=>galleryRef.current?.click()}
+                    >
+                      Add photos
+                    </Button>
+                  </div>
+                  {data.galleryImages.length>0&& (
+                    <div className="photo-grid">
+                      {data.galleryImages.map((image,index)=>(
+                        <PhotoRow
+                          key={image}
+                          image={image}
+                          label={`Gallery ${index+1}`}
+                          onDelete={()=>update("galleryImages",data.galleryImages.filter((_,i)=>i!==index))}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            ) : (
+              <>
+                {/* Main Couple Photo for standard templates */}
+                <section className={`upload-card ${drag==="hero"?"dragging":""}`}>
+                  <header className="upload-head">
+                    <div>
+                      <h3>
+                        <span className="upload-step">1</span> Main couple photo
+                        <em className="upload-required">Required</em>
+                      </h3>
+                      <p>This is the large photo at the top of your invitation. A portrait shot of you both works best.</p>
+                    </div>
+                  </header>
+                  <div
+                    className="dropzone"
+                    onDragOver={(e)=>{e.preventDefault();setDrag("hero")}}
+                    onDragLeave={()=>setDrag(null)}
+                    onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"hero")}}
+                  >
+                    <input
+                      ref={heroRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      hidden
+                      onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"hero");e.target.value=""}}
+                    />
+                    {data.primaryPhotoUrl ? (
+                      <div className="upload-preview tall">
+                        <img src={data.primaryPhotoUrl} alt="Main couple photo preview" />
+                        <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={saving}
+                            onClick={()=>heroRef.current?.click()}
+                          >
+                            {saving?<LoaderCircle className="spin"/>:<Upload className="w-3.5 h-3.5 mr-1"/>}
+                            Upload Photo Instead
                           </Button>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              update("referenceImageUrl", "");
-                              setExtractedPalette(null);
-                            }}
+                            onClick={()=>update("primaryPhotoUrl","")}
                           >
                             Remove
                           </Button>
@@ -486,215 +867,70 @@ function Builder() {
                       </div>
                     ) : (
                       <>
-                        {saving ? <LoaderCircle className="spin" /> : <Wand2 className="w-8 h-8 text-primary" />}
-                        <h3>Drop your reference design image here</h3>
-                        <p>Upload a card photo, pattern, or wedding style you want AI to recreate</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={saving || generatingAiHero}
-                          onClick={() => referenceRef.current?.click()}
-                        >
-                          Choose Reference Image
+                        {saving?<LoaderCircle className="spin"/>:<ImagePlus/>}
+                        <h3>Drop your hero photo here</h3>
+                        <p>One photo · JPG, PNG or WebP · max 10MB</p>
+                        <Button type="button" variant="outline" disabled={saving} onClick={()=>heroRef.current?.click()}>
+                          Choose photo
                         </Button>
                       </>
                     )}
                   </div>
+                </section>
 
-                  {/* Extracted Palette Display (if analyzed) */}
-                  {extractedPalette && (
-                    <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Palette className="w-4 h-4 text-primary" />
-                        <span className="text-xs font-semibold">Analyzed Palette from Reference:</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {[
-                          { label: "Primary", col: extractedPalette.primary },
-                          { label: "Secondary", col: extractedPalette.secondary },
-                          { label: "Accent", col: extractedPalette.accent },
-                          { label: "Background", col: extractedPalette.background },
-                        ].map((chip) => (
-                          <div
-                            key={chip.label}
-                            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white dark:bg-card border border-border shadow-xs"
-                            title={`${chip.label}: ${chip.col}`}
-                          >
-                            <span
-                              className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0"
-                              style={{ backgroundColor: chip.col }}
-                            />
-                            <span className="text-[11px] font-mono text-muted-foreground">{chip.col}</span>
-                          </div>
-                        ))}
-                      </div>
+                {/* Gallery Photos Slot for standard templates */}
+                <section className={`upload-card ${drag==="gallery"?"dragging":""}`}>
+                  <header className="upload-head">
+                    <div>
+                      <h3>
+                        <span className="upload-step">2</span> Gallery photos{" "}
+                        <em className="upload-required">At least 1</em>
+                      </h3>
+                      <p>Moments from your engagement, the ceremony, or you both. These appear in the gallery strip.</p>
                     </div>
-                  )}
-
-
-
-                  {/* Generate AI Hero Button */}
-                  <div className="pt-2">
+                    <span className="upload-count">{data.galleryImages.length} / {MAX_GALLERY_IMAGES}</span>
+                  </header>
+                  <div
+                    className="dropzone"
+                    onDragOver={(e)=>{e.preventDefault();setDrag("gallery")}}
+                    onDragLeave={()=>setDrag(null)}
+                    onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"gallery")}}
+                  >
+                    <input
+                      ref={galleryRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      hidden
+                      onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"gallery");e.target.value=""}}
+                    />
+                    {saving?<LoaderCircle className="spin"/>:<Upload/>}
+                    <h3>Drop gallery photos here</h3>
+                    <p>Select several at once · max 10MB each</p>
                     <Button
                       type="button"
-                      size="lg"
-                      className="w-full bg-gradient-to-r from-amber-600 via-primary to-rose-600 text-white font-semibold shadow-md hover:opacity-95 transition-opacity"
-                      disabled={generatingAiHero || saving}
-                      onClick={() => void handleGenerateAiHero()}
+                      variant="outline"
+                      disabled={saving||data.galleryImages.length>=MAX_GALLERY_IMAGES}
+                      onClick={()=>galleryRef.current?.click()}
                     >
-                      {generatingAiHero ? (
-                        <>
-                          <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
-                          Synthesizing Authentic AI Hero Artwork (1200x1500)...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Generate AI Hero Section Artwork
-                        </>
-                      )}
+                      Add photos
                     </Button>
-                    <p className="text-[11px] text-muted-foreground text-center mt-1.5">
-                      Combines couple names, wedding date, venue, and reference style into a high-resolution hero design.
-                    </p>
                   </div>
-                </div>
-              </section>
-            )}
-
-            {/* Main Couple Photo / Generated Hero Slot */}
-            <section className={`upload-card ${drag==="hero"?"dragging":""}`}>
-              <header className="upload-head">
-                <div>
-                  <h3>
-                    <span className="upload-step">{id === "custom-ai" ? "2" : "1"}</span>
-                    {id === "custom-ai" ? "Main Hero Section (Generated or Portrait)" : "Main couple photo"}
-                    <em className="upload-required">Required</em>
-                  </h3>
-                  <p>
-                    {id === "custom-ai"
-                      ? "This is the hero section artwork for your invitation. Use the AI generated artwork above or upload a portrait photo."
-                      : "This is the large photo at the top of your invitation. A portrait shot of you both works best."}
-                  </p>
-                </div>
-              </header>
-              <div
-                className="dropzone"
-                onDragOver={(e)=>{e.preventDefault();setDrag("hero")}}
-                onDragLeave={()=>setDrag(null)}
-                onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"hero")}}
-              >
-                <input
-                  ref={heroRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  hidden
-                  onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"hero");e.target.value=""}}
-                />
-                {data.primaryPhotoUrl ? (
-                  <div className="upload-preview tall">
-                    <img src={data.primaryPhotoUrl} alt="Main couple photo preview" />
-                    <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
-                      {id === "custom-ai" && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={generatingAiHero || saving}
-                          onClick={() => void handleGenerateAiHero()}
-                        >
-                          {generatingAiHero ? <LoaderCircle className="spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
-                          Regenerate AI Artwork
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={saving}
-                        onClick={()=>heroRef.current?.click()}
-                      >
-                        {saving?<LoaderCircle className="spin"/>:<Upload className="w-3.5 h-3.5 mr-1"/>}
-                        Upload Photo Instead
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={()=>update("primaryPhotoUrl","")}
-                      >
-                        Remove
-                      </Button>
+                  {data.galleryImages.length>0&& (
+                    <div className="photo-grid">
+                      {data.galleryImages.map((image,index)=>(
+                        <PhotoRow
+                          key={image}
+                          image={image}
+                          label={`Gallery ${index+1}`}
+                          onDelete={()=>update("galleryImages",data.galleryImages.filter((_,i)=>i!==index))}
+                        />
+                      ))}
                     </div>
-                  </div>
-                ) : (
-                  <>
-                    {saving?<LoaderCircle className="spin"/>:<ImagePlus/>}
-                    <h3>Drop your hero photo or generated artwork here</h3>
-                    <p>One photo · JPG, PNG or WebP · max 10MB</p>
-                    <Button type="button" variant="outline" disabled={saving} onClick={()=>heroRef.current?.click()}>
-                      Choose photo
-                    </Button>
-                  </>
-                )}
-              </div>
-            </section>
-
-            {/* Gallery Photos Slot */}
-            <section className={`upload-card ${drag==="gallery"?"dragging":""}`}>
-              <header className="upload-head">
-                <div>
-                  <h3>
-                    <span className="upload-step">{id === "custom-ai" ? "3" : "2"}</span> Gallery photos{" "}
-                    {id === "custom-ai" ? (
-                      <em className="upload-optional text-xs font-normal text-muted-foreground">(Optional)</em>
-                    ) : (
-                      <em className="upload-required">At least 1</em>
-                    )}
-                  </h3>
-                  <p>Moments from your engagement, the ceremony, or you both. These appear in the gallery strip.</p>
-                </div>
-                <span className="upload-count">{data.galleryImages.length} / {MAX_GALLERY_IMAGES}</span>
-              </header>
-              <div
-                className="dropzone"
-                onDragOver={(e)=>{e.preventDefault();setDrag("gallery")}}
-                onDragLeave={()=>setDrag(null)}
-                onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"gallery")}}
-              >
-                <input
-                  ref={galleryRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  hidden
-                  onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"gallery");e.target.value=""}}
-                />
-                {saving?<LoaderCircle className="spin"/>:<Upload/>}
-                <h3>Drop gallery photos here</h3>
-                <p>Select several at once · max 10MB each</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={saving||data.galleryImages.length>=MAX_GALLERY_IMAGES}
-                  onClick={()=>galleryRef.current?.click()}
-                >
-                  Add photos
-                </Button>
-              </div>
-              {data.galleryImages.length>0&& (
-                <div className="photo-grid">
-                  {data.galleryImages.map((image,index)=>(
-                    <PhotoRow
-                      key={image}
-                      image={image}
-                      label={`Gallery ${index+1}`}
-                      onDelete={()=>update("galleryImages",data.galleryImages.filter((_,i)=>i!==index))}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+                  )}
+                </section>
+              </>
+            )}
           </div>}
 
           {step===4&&<div className="form-stack"><div className="rsvp-toggle"><div><h3>Enable RSVP</h3><p>Show reply details on your invitation.</p></div><Switch checked={data.rsvpEnabled} onCheckedChange={value=>update("rsvpEnabled",value)}/></div>{data.rsvpEnabled&&<div className="form-grid"><Field label="RSVP deadline"><Input type="date" value={data.rsvpDeadline} onChange={e=>update("rsvpDeadline",e.target.value)}/></Field><Field label="Contact phone"><Input type="tel" value={data.phone} onChange={e=>update("phone",e.target.value)} placeholder="+251 911 234 567"/></Field><Field label="Contact email"><Input type="email" value={data.email} onChange={e=>update("email",e.target.value)} placeholder="hello@example.com"/></Field><Field label="Closing message" optional><Textarea value={data.customMessage} onChange={e=>update("customMessage",e.target.value)} placeholder="With joyful hearts..."/></Field></div>}</div>}

@@ -7,6 +7,7 @@ const geminiHeroSchema = z.object({
   weddingDate: z.string().max(50).optional(),
   venue: z.string().max(200).optional(),
   referenceImageDataUrl: z.string().optional(),
+  heroImageDataUrl: z.string().optional(),
 });
 
 export interface GeminiHeroResult {
@@ -18,9 +19,9 @@ export interface GeminiHeroResult {
 }
 
 /**
- * Server function to generate bespoke wedding invitation hero artwork
- * using Google Gemini 2.0 Flash (for multimodal reference image analysis)
- * and Google Imagen 3 (for high-fidelity image generation).
+ * Server function to regenerate bespoke wedding invitation hero artwork
+ * taking two images: the reference design picture and the hero section couple picture,
+ * and regenerating the hero picture in the exact style of the reference picture.
  */
 export const generateGeminiWeddingHero = createServerFn({ method: "POST" })
   .validator((data) => geminiHeroSchema.parse(data))
@@ -44,47 +45,63 @@ export const generateGeminiWeddingHero = createServerFn({ method: "POST" })
     try {
       let styleDescription = "Luxurious minimalist wedding invitation background, elegant warm ivory and champagne palette, delicate architectural framing, modern editorial stationery.";
 
-      // 1. If reference image is provided, analyze its exact aesthetic with Gemini Flash
+      // 1. Multimodal analysis of both Reference Picture and Hero Picture
+      const parts: Array<Record<string, unknown>> = [];
+
+      let promptInstruction = "Analyze this wedding invitation reference design in detail. Describe its exact color palette, textures, decorative borders, framing style, and artistic mood. Do NOT mention or add any crosses or religious symbols. Produce a concise generation prompt (under 90 words) to recreate this exact aesthetic.";
+
+      if (data.heroImageDataUrl && data.referenceImageDataUrl) {
+        promptInstruction = "You are given two images: 1. A REFERENCE DESIGN picture showing the target artistic style, lighting, color palette, borders, and textures. 2. A HERO SECTION picture of the couple. Analyze both images. Produce a concise image generation prompt (under 100 words) instructing an AI image generator to regenerate the couple from image 2 in the exact artistic style, color palette, lighting, framing, and mood of image 1. Do NOT mention or add any crosses or religious symbols.";
+      }
+
+      parts.push({ text: promptInstruction });
+
+      // Add Reference Image
       if (data.referenceImageDataUrl && data.referenceImageDataUrl.startsWith("data:")) {
+        const refMatch = data.referenceImageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (refMatch && refMatch[1] && refMatch[2]) {
+          parts.push({
+            inlineData: {
+              mimeType: refMatch[1],
+              data: refMatch[2],
+            },
+          });
+        }
+      }
+
+      // Add Hero Section Couple Image
+      if (data.heroImageDataUrl && data.heroImageDataUrl.startsWith("data:")) {
+        const heroMatch = data.heroImageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (heroMatch && heroMatch[1] && heroMatch[2]) {
+          parts.push({
+            inlineData: {
+              mimeType: heroMatch[1],
+              data: heroMatch[2],
+            },
+          });
+        }
+      }
+
+      if (parts.length > 1) {
         try {
-          const match = data.referenceImageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
-          if (match && match[1] && match[2]) {
-            const mimeType = match[1];
-            const base64Data = match[2];
+          const visionResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts }],
+              }),
+            }
+          );
 
-            const visionResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [
-                    {
-                      parts: [
-                        {
-                          text: "Analyze this wedding invitation reference design in detail. Describe its exact color palette (primary colors, background wash, accent tones), textures, decorative borders, framing style, and artistic mood. Do NOT mention or add any crosses or religious symbols. Respond with a single concise paragraph (under 80 words) describing the visual style for an AI image generator to replicate the exact look and feel.",
-                        },
-                        {
-                          inlineData: {
-                            mimeType,
-                            data: base64Data,
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                }),
-              }
-            );
-
-            if (visionResponse.ok) {
-              const visionResult = (await visionResponse.json()) as {
-                candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-              };
-              const analysis = visionResult.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (analysis && analysis.trim()) {
-                styleDescription = analysis.trim();
-              }
+          if (visionResponse.ok) {
+            const visionResult = (await visionResponse.json()) as {
+              candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+            };
+            const analysis = visionResult.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (analysis && analysis.trim()) {
+              styleDescription = analysis.trim();
             }
           }
         } catch (visionErr) {
