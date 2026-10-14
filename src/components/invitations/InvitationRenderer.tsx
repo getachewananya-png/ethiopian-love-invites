@@ -930,7 +930,7 @@ function CustomAiTemplate({
         {/* Couple & Date Ceremony Info */}
         <section className="custom-ai-intro" data-reveal data-fly="up" style={{ textAlign: "center", padding: "16px 0" }}>
           <p className="custom-ai-kicker" style={{ fontSize: "0.8125rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "oklch(0.5 0.12 45)", fontWeight: 600, margin: "0 0 10px" }}>
-            {t.kickerRoyal}
+            {lang === "am" ? "የጋብቻ ጥሪ" : "Wedding Invitation"}
           </p>
           <h1 className="custom-ai-names" data-reveal data-fly="left" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 650, margin: "0 0 6px", lineHeight: 1.15 }}>
             <span>{i.brideName}</span>
@@ -945,7 +945,7 @@ function CustomAiTemplate({
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", margin: "16px auto", maxWidth: "240px" }}>
             <span style={{ flex: 1, height: "1px", background: "oklch(0.8 0.06 60 / 50%)" }} />
-            <span style={{ color: "oklch(0.55 0.15 45)", fontSize: "14px" }}>✚</span>
+            <span style={{ color: "currentColor", opacity: 0.6, fontSize: "12px" }}>✦</span>
             <span style={{ flex: 1, height: "1px", background: "oklch(0.8 0.06 60 / 50%)" }} />
           </div>
 

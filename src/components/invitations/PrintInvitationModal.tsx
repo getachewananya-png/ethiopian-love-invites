@@ -414,7 +414,7 @@ function PrintableCardContent({
           </div>
 
           <p style={{ fontSize: "0.8125rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "oklch(0.5 0.12 45)", fontWeight: 600, margin: "0 0 8px" }}>
-            {t.kickerRoyal}
+            {lang === "am" ? "የጋብቻ ጥሪ" : "Wedding Invitation"}
           </p>
 
           <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "2.35rem", fontWeight: 650, margin: "0 0 6px", lineHeight: 1.15, wordBreak: "break-word" }}>
@@ -431,7 +431,7 @@ function PrintableCardContent({
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", margin: "14px auto", maxWidth: "220px" }}>
             <span style={{ flex: 1, height: "1px", background: "oklch(0.8 0.06 60 / 50%)" }} />
-            <span style={{ color: "oklch(0.55 0.15 45)", fontSize: "14px" }}>✚</span>
+            <span style={{ color: "currentColor", opacity: 0.6, fontSize: "12px" }}>✦</span>
             <span style={{ flex: 1, height: "1px", background: "oklch(0.8 0.06 60 / 50%)" }} />
           </div>
 

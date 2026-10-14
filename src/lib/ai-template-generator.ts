@@ -218,21 +218,20 @@ export async function generateAiHeroArtwork(params: GenerateHeroParams): Promise
     return "";
   }
 
-  // Load preset or extracted palette
-  const preset = AI_STYLE_PRESETS.find((p) => p.id === stylePresetId) || AI_STYLE_PRESETS[0]!;
+  // Load palette directly and purely from the reference image
   let palette: ExtractedPalette = {
-    primary: preset.primaryColor,
-    secondary: preset.accentColor,
-    background: preset.bgGradient[0],
-    text: preset.textColor,
-    isDark: true,
+    primary: "#c29b62",
+    secondary: "#8a6d48",
+    background: "#faf7f2",
+    text: "#2b2623",
+    isDark: false,
   };
 
   if (referenceImageDataUrl) {
     try {
       palette = await extractReferencePalette(referenceImageDataUrl);
     } catch {
-      // Fallback to preset
+      // Fallback
     }
   }
 
@@ -277,87 +276,67 @@ export async function generateAiHeroArtwork(params: GenerateHeroParams): Promise
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
 
-  // 1. Background gradient / wash
+  // 1. Background wash taken directly from reference image palette
   const bgGrad = ctx.createLinearGradient(0, 0, width, height);
   if (palette.isDark) {
-    bgGrad.addColorStop(0, preset.bgGradient[0]);
-    bgGrad.addColorStop(0.5, preset.bgGradient[1]);
-    bgGrad.addColorStop(1, "#0d0408");
+    bgGrad.addColorStop(0, palette.background);
+    bgGrad.addColorStop(1, "#0d0e12");
   } else {
-    bgGrad.addColorStop(0, "#fcf9f5");
-    bgGrad.addColorStop(0.5, "#f7f1e8");
-    bgGrad.addColorStop(1, "#eee4d6");
+    bgGrad.addColorStop(0, palette.background);
+    bgGrad.addColorStop(1, "#f5f2eb");
   }
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, width, height);
 
-  // If a reference image is present and no couple photo is provided,
-  // we draw a beautiful stylized, softly-vignetted background inspiration
-  if (loadedRefImg && !loadedCoupleImg) {
+  // If both reference image and couple photo are provided, soft reference atmosphere in background
+  if (loadedRefImg && loadedCoupleImg) {
     ctx.save();
-    ctx.globalAlpha = palette.isDark ? 0.35 : 0.25;
-    ctx.filter = "blur(12px)";
-    ctx.drawImage(loadedRefImg, -50, -50, width + 100, height + 100);
+    ctx.globalAlpha = palette.isDark ? 0.25 : 0.18;
+    ctx.filter = "blur(16px)";
+    ctx.drawImage(loadedRefImg, -40, -40, width + 80, height + 80);
     ctx.restore();
   }
 
-  // 2. Subtle Luxury Texture overlay
-  ctx.save();
-  ctx.fillStyle = palette.isDark ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.02)";
-  for (let i = 0; i < 400; i++) {
-    const rx = Math.random() * width;
-    const ry = Math.random() * height;
-    const rSize = Math.random() * 3 + 1;
-    ctx.beginPath();
-    ctx.arc(rx, ry, rSize, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-
-  // 3. Ornate Outer Double Borders (Gold filigree style)
+  // 2. Double Border in primary and secondary reference colors (no foreign styles)
   const margin = 50;
   ctx.save();
-  ctx.strokeStyle = preset.primaryColor;
+  ctx.strokeStyle = palette.primary;
   ctx.lineWidth = 3;
   ctx.strokeRect(margin, margin, width - margin * 2, height - margin * 2);
 
-  ctx.strokeStyle = preset.accentColor;
+  ctx.strokeStyle = palette.secondary;
   ctx.lineWidth = 1;
   ctx.strokeRect(margin + 12, margin + 12, width - (margin + 12) * 2, height - (margin + 12) * 2);
 
-  // Corner decorative flourishes
-  const cornerSize = 40;
+  // Corner accent dots
   const corners = [
     [margin + 12, margin + 12],
     [width - (margin + 12), margin + 12],
     [margin + 12, height - (margin + 12)],
     [width - (margin + 12), height - (margin + 12)],
   ];
-  ctx.fillStyle = preset.primaryColor;
+  ctx.fillStyle = palette.primary;
   for (const [cx, cy] of corners) {
     ctx.beginPath();
-    ctx.arc(cx!, cy!, 6, 0, Math.PI * 2);
+    ctx.arc(cx!, cy!, 5, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
 
-  // 4. Central Arch or Portrait Window
-  const archX = 220;
-  const archY = 160;
+  // 3. Central Portrait / Image Window
+  const archX = 200;
+  const archY = 150;
   const archW = width - archX * 2;
-  const archH = 680;
-  const archRadius = archW / 2;
+  const archH = 700;
+  const archRadius = 24;
 
   ctx.save();
+  // Rounded rectangle for clean, modern framing of the uploaded picture
   ctx.beginPath();
-  ctx.moveTo(archX, archY + archRadius);
-  ctx.arc(archX + archRadius, archY + archRadius, archRadius, Math.PI, 0, false);
-  ctx.lineTo(archX + archW, archY + archH);
-  ctx.lineTo(archX, archY + archH);
-  ctx.closePath();
+  ctx.roundRect(archX, archY, archW, archH, [archRadius, archRadius, archRadius, archRadius]);
   ctx.clip();
 
-  // Draw image inside arch
+  // Display user's uploaded picture (couple photo if present, otherwise reference image)
   const displayImage = loadedCoupleImg || loadedRefImg;
   if (displayImage) {
     const scale = Math.max(archW / displayImage.width, archH / displayImage.height);
@@ -367,142 +346,105 @@ export async function generateAiHeroArtwork(params: GenerateHeroParams): Promise
     const sy = archY + (archH - sh) / 2;
     ctx.drawImage(displayImage, sx, sy, sw, sh);
 
-    // Subtle dark gradient overlay at bottom of photo for text transition
-    const photoGrad = ctx.createLinearGradient(0, archY + archH - 180, 0, archY + archH);
+    // Soft gradient fade at bottom of photo for legible typography transition
+    const photoGrad = ctx.createLinearGradient(0, archY + archH - 160, 0, archY + archH);
     photoGrad.addColorStop(0, "transparent");
-    photoGrad.addColorStop(1, palette.isDark ? "rgba(20, 6, 12, 0.85)" : "rgba(255, 255, 255, 0.7)");
+    photoGrad.addColorStop(1, palette.isDark ? "rgba(10, 10, 12, 0.85)" : "rgba(255, 255, 255, 0.8)");
     ctx.fillStyle = photoGrad;
-    ctx.fillRect(archX, archY + archH - 180, archW, 180);
+    ctx.fillRect(archX, archY + archH - 160, archW, 160);
   } else {
-    // Stylized artistic watercolor placeholder if no photo
-    const artGrad = ctx.createRadialGradient(
-      archX + archW / 2,
-      archY + archH / 2,
-      50,
-      archX + archW / 2,
-      archY + archH / 2,
-      archW / 1.5
-    );
-    artGrad.addColorStop(0, preset.primaryColor);
-    artGrad.addColorStop(1, preset.bgGradient[1]);
-    ctx.fillStyle = artGrad;
+    // Soft tone placeholder if neither image is loaded
+    ctx.fillStyle = palette.background;
     ctx.fillRect(archX, archY, archW, archH);
   }
   ctx.restore();
 
-  // Draw Arch Gold Outline
+  // Outline of the image frame
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(archX, archY + archRadius);
-  ctx.arc(archX + archRadius, archY + archRadius, archRadius, Math.PI, 0, false);
-  ctx.lineTo(archX + archW, archY + archH);
-  ctx.lineTo(archX, archY + archH);
-  ctx.closePath();
-  ctx.strokeStyle = preset.primaryColor;
-  ctx.lineWidth = 4;
+  ctx.roundRect(archX, archY, archW, archH, [archRadius, archRadius, archRadius, archRadius]);
+  ctx.strokeStyle = palette.primary;
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Inner hairline
   ctx.beginPath();
-  ctx.moveTo(archX + 8, archY + archRadius + 4);
-  ctx.arc(archX + archRadius, archY + archRadius, archRadius - 8, Math.PI, 0, false);
-  ctx.lineTo(archX + archW - 8, archY + archH - 8);
-  ctx.lineTo(archX + 8, archY + archH - 8);
-  ctx.closePath();
-  ctx.strokeStyle = preset.accentColor;
-  ctx.lineWidth = 1.5;
+  ctx.roundRect(archX + 6, archY + 6, archW - 12, archH - 12, [archRadius - 4, archRadius - 4, archRadius - 4, archRadius - 4]);
+  ctx.strokeStyle = palette.secondary;
+  ctx.lineWidth = 1;
   ctx.stroke();
   ctx.restore();
 
-  // 5. Ceremonial Motif at Top (Cross or Floral)
+  // 4. Subtle top ornament (Clean diamond dot, NO cross)
   ctx.save();
-  ctx.fillStyle = preset.primaryColor;
+  ctx.fillStyle = palette.primary;
   ctx.textAlign = "center";
-  const crossX = width / 2;
-  const crossY = 105;
-
-  if (preset.motif === "cross" || preset.motif === "tibeb") {
-    // Ethiopian Cross
-    ctx.beginPath();
-    ctx.rect(crossX - 4, crossY - 32, 8, 48); // vertical beam
-    ctx.rect(crossX - 22, crossY - 18, 44, 8); // horizontal beam
-    ctx.fill();
-
-    // Central jewel
-    ctx.beginPath();
-    ctx.arc(crossX, crossY - 14, 6, 0, Math.PI * 2);
-    ctx.fillStyle = preset.accentColor;
-    ctx.fill();
-  } else {
-    // Floral / Botanical sprig
-    ctx.font = "32px serif";
-    ctx.fillText("❦", crossX, crossY);
-  }
+  ctx.font = "18px sans-serif";
+  ctx.fillText("✦", width / 2, 105);
   ctx.restore();
 
-  // 6. Typographic Composition (Bride & Groom, Date, Location)
+  // 5. Typographic Composition directly with analyzed reference colors
   ctx.save();
   ctx.textAlign = "center";
 
   // Kicker
-  ctx.fillStyle = preset.accentColor;
-  ctx.font = "600 24px 'Montserrat', sans-serif";
-  ctx.letterSpacing = "0.25em";
-  ctx.fillText("THE WEDDING CELEBRATION OF", width / 2, 920);
+  ctx.fillStyle = palette.secondary;
+  ctx.font = "600 22px 'Montserrat', sans-serif";
+  ctx.letterSpacing = "0.22em";
+  ctx.fillText("WEDDING CELEBRATION", width / 2, 930);
 
   // Bride Name
   const bName = brideName.trim().toUpperCase() || "BRIDE";
-  ctx.fillStyle = palette.isDark ? "#ffffff" : preset.primaryColor;
-  ctx.font = "500 74px 'Cormorant Garamond', 'Playfair Display', Georgia, serif";
-  ctx.fillText(bName, width / 2, 1020);
+  ctx.fillStyle = palette.text;
+  ctx.font = "500 70px 'Cormorant Garamond', 'Playfair Display', Georgia, serif";
+  ctx.fillText(bName, width / 2, 1025);
 
-  // Amper & flourish
-  ctx.fillStyle = preset.primaryColor;
-  ctx.font = "italic 400 48px 'Great Vibes', 'Playfair Display', cursive, serif";
+  // Ampersand
+  ctx.fillStyle = palette.primary;
+  ctx.font = "italic 400 46px 'Great Vibes', 'Playfair Display', cursive, serif";
   ctx.fillText("&", width / 2, 1085);
 
   // Groom Name
   const gName = groomName.trim().toUpperCase() || "GROOM";
-  ctx.fillStyle = palette.isDark ? "#ffffff" : preset.primaryColor;
-  ctx.font = "500 74px 'Cormorant Garamond', 'Playfair Display', Georgia, serif";
-  ctx.fillText(gName, width / 2, 1180);
+  ctx.fillStyle = palette.text;
+  ctx.font = "500 70px 'Cormorant Garamond', 'Playfair Display', Georgia, serif";
+  ctx.fillText(gName, width / 2, 1175);
 
   // Ornamental Divider Rule
-  const ruleW = 180;
-  ctx.strokeStyle = preset.primaryColor;
+  const ruleW = 160;
+  ctx.strokeStyle = palette.primary;
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(width / 2 - ruleW, 1225);
-  ctx.lineTo(width / 2 - 25, 1225);
-  ctx.moveTo(width / 2 + 25, 1225);
-  ctx.lineTo(width / 2 + ruleW, 1225);
+  ctx.moveTo(width / 2 - ruleW, 1220);
+  ctx.lineTo(width / 2 - 20, 1220);
+  ctx.moveTo(width / 2 + 20, 1220);
+  ctx.lineTo(width / 2 + ruleW, 1220);
   ctx.stroke();
 
-  ctx.fillStyle = preset.primaryColor;
+  ctx.fillStyle = palette.primary;
   ctx.beginPath();
-  ctx.arc(width / 2, 1225, 5, 0, Math.PI * 2);
+  ctx.arc(width / 2, 1220, 4, 0, Math.PI * 2);
   ctx.fill();
 
   // Wedding Date
   const dateStr = weddingDate || "SATURDAY · SEPTEMBER 20, 2026";
-  ctx.fillStyle = palette.isDark ? "#f3e5ab" : "#4a3b32";
-  ctx.font = "600 28px 'Montserrat', sans-serif";
-  ctx.fillText(dateStr.toUpperCase(), width / 2, 1290);
+  ctx.fillStyle = palette.text;
+  ctx.font = "600 26px 'Montserrat', sans-serif";
+  ctx.fillText(dateStr.toUpperCase(), width / 2, 1280);
 
   // Venue
   if (venue) {
-    ctx.fillStyle = palette.isDark ? "rgba(255, 255, 255, 0.85)" : "#6a574a";
-    ctx.font = "500 24px 'Montserrat', sans-serif";
-    ctx.fillText(venue.toUpperCase(), width / 2, 1340);
+    ctx.fillStyle = palette.secondary;
+    ctx.font = "500 22px 'Montserrat', sans-serif";
+    ctx.fillText(venue.toUpperCase(), width / 2, 1330);
   }
 
   // Footer blessing
-  ctx.fillStyle = preset.accentColor;
-  ctx.font = "italic 30px 'Great Vibes', cursive";
-  ctx.fillText("Together with their families", width / 2, 1400);
+  ctx.fillStyle = palette.secondary;
+  ctx.font = "italic 28px 'Great Vibes', cursive";
+  ctx.fillText("Together with their families", width / 2, 1390);
 
   ctx.restore();
 
-  return canvas.toDataURL("image/jpeg", 0.94);
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 

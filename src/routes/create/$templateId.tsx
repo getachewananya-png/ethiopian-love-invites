@@ -19,8 +19,6 @@ import { sampleInvitation, TEMPLATE_IDS, templateMeta, normalizeTemplateId, type
 import {
   extractReferencePalette,
   generateAiHeroArtwork,
-  AI_STYLE_PRESETS,
-  type AiStylePreset,
   type ExtractedPalette,
 } from "@/lib/ai-template-generator";
 
@@ -118,7 +116,6 @@ function Builder() {
   const [step,setStep]=useState(0); const [saving,setSaving]=useState(false); const [loadingEdit,setLoadingEdit]=useState(isEditing); const [success,setSuccess]=useState<string>(); const [qr,setQr]=useState<string>(); const [drag,setDrag]=useState<string|null>(null); const [printModalOpen,setPrintModalOpen]=useState(false); const heroRef=useRef<HTMLInputElement>(null); const galleryRef=useRef<HTMLInputElement>(null);
   const referenceRef=useRef<HTMLInputElement>(null);
   const [generatingAiHero, setGeneratingAiHero] = useState(false);
-  const [aiPreset, setAiPreset] = useState<string>("royal-burgundy-gold");
   const [extractedPalette, setExtractedPalette] = useState<ExtractedPalette | null>(null);
   const storageKey=`tizita-draft-${id}`;
   const [data,setData]=useState<WeddingInvitation>(()=>({...sampleInvitation,templateId:id,brideName:"",groomName:"",brideNameAm:"",groomNameAm:"",primaryPhotoUrl:"",galleryImages:[]}));
@@ -243,8 +240,7 @@ function Builder() {
     }
   };
 
-  const handleGenerateAiHero = async (presetOverride?: string) => {
-    const targetPreset = presetOverride || data.aiStylePreset || aiPreset;
+  const handleGenerateAiHero = async () => {
     setGeneratingAiHero(true);
     try {
       const artwork = await generateAiHeroArtwork({
@@ -252,18 +248,17 @@ function Builder() {
         groomName: data.groomName || "Abebe Mekonnen",
         weddingDate: data.weddingDate || "2025-08-24",
         venue: data.venue || "Addis Ababa",
-        stylePresetId: targetPreset,
         referenceImageDataUrl: data.referenceImageUrl,
+        couplePhotoDataUrl: data.primaryPhotoUrl && !data.primaryPhotoUrl.startsWith("data:") ? data.primaryPhotoUrl : undefined,
       });
       setData((curr) => ({
         ...curr,
         primaryPhotoUrl: artwork,
-        aiStylePreset: targetPreset,
       }));
-      toast.success("✨ Custom AI hero section artwork generated!");
+      toast.success("✨ Custom hero section artwork generated from your reference design!");
     } catch (err) {
       console.error("AI hero generation error:", err);
-      toast.error("Could not generate AI hero artwork. Please try again.");
+      toast.error("Could not generate hero artwork. Please try again.");
     } finally {
       setGeneratingAiHero(false);
     }
@@ -503,58 +498,7 @@ function Builder() {
                     </div>
                   )}
 
-                  {/* AI Style & Motif Preset Selector */}
-                  <div className="space-y-2 pt-2">
-                    <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground flex items-center justify-between">
-                      <span>Choose AI Style &amp; Motif Aesthetic</span>
-                      <span className="font-normal text-[11px] text-primary">Procedural Ethiopian Synthesis</span>
-                    </Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                      {AI_STYLE_PRESETS.map((preset) => {
-                        const isSelected = (data.aiStylePreset || aiPreset) === preset.id;
-                        return (
-                          <button
-                            key={preset.id}
-                            type="button"
-                            className={`p-3 rounded-xl border text-left transition-all ${
-                              isSelected
-                                ? "border-primary bg-primary/10 shadow-sm"
-                                : "border-border/60 hover:border-border hover:bg-muted/40"
-                            }`}
-                            onClick={() => {
-                              setAiPreset(preset.id);
-                              update("aiStylePreset", preset.id);
-                            }}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <strong className="text-xs font-semibold text-foreground">{preset.name}</strong>
-                              {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
-                            </div>
-                            <p className="text-[11px] text-muted-foreground line-clamp-2 leading-tight">
-                              {preset.description}
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-2">
-                              <span
-                                className="w-3 h-3 rounded-full border border-black/10"
-                                style={{ backgroundColor: preset.primaryColor }}
-                                title="Primary"
-                              />
-                              <span
-                                className="w-3 h-3 rounded-full border border-black/10"
-                                style={{ backgroundColor: preset.accentColor }}
-                                title="Accent"
-                              />
-                              <span
-                                className="w-3 h-3 rounded-full border border-black/10"
-                                style={{ backgroundColor: preset.bgGradient[0] }}
-                                title="Background"
-                              />
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+
 
                   {/* Generate AI Hero Button */}
                   <div className="pt-2">
