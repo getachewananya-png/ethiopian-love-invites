@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, GripVertical, ImagePlus, LoaderCircle, Mail, MapPin, Palette, Phone, Printer, RefreshCw, Share2, Sparkles, Trash2, Upload, Wand2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import QRCode from "qrcode";
@@ -15,7 +15,7 @@ import { startPaidInvitation } from "@/lib/payments.functions";
 import { isPaidTemplate, TEMPLATE_PRICE_ETB, formatEtb } from "@/lib/plans";
 import { useAuth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/utils";
-import { sampleInvitation, TEMPLATE_IDS, templateMeta, type TemplateId, type WeddingInvitation } from "@/lib/invitation";
+import { sampleInvitation, TEMPLATE_IDS, templateMeta, normalizeTemplateId, type TemplateId, type WeddingInvitation } from "@/lib/invitation";
 import {
   extractReferencePalette,
   generateAiHeroArtwork,
@@ -28,12 +28,31 @@ export const Route = createFileRoute("/create/$templateId")({
   validateSearch: (search: Record<string, unknown>): { edit?: string | undefined } => ({
     edit: typeof search["edit"] === "string" ? search["edit"] : undefined,
   }),
-  beforeLoad: ({ params }) => { if (!TEMPLATE_IDS.includes(params.templateId as TemplateId)) throw notFound(); },
-  head: ({ params }) => ({ meta: [
-    { title: `Customize ${templateMeta[params.templateId as TemplateId]?.name ?? "Invitation"} — Tizita` }, { name: "description", content: "Add your names, wedding details, story, and photos to create your invitation." },
-    { property: "og:title", content: "Create Your Ethiopian Wedding Invitation — Tizita" }, { property: "og:description", content: "Customize and publish your own beautiful bilingual wedding invitation." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
-  ]}), component: Builder,
+  beforeLoad: ({ params }) => {
+    const rawId = (params.templateId as string).toLowerCase().trim();
+    if (rawId === "custome-ai") {
+      throw redirect({
+        to: "/create/$templateId",
+        params: { templateId: "custom-ai" },
+      });
+    }
+    if (!TEMPLATE_IDS.includes(rawId as TemplateId)) throw notFound();
+  },
+  head: ({ params }) => {
+    const id = normalizeTemplateId(params.templateId as string);
+    const meta = templateMeta[id];
+    return {
+      meta: [
+        { title: `Customize ${meta?.name ?? "Invitation"} — Tizita` },
+        { name: "description", content: "Add your names, wedding details, story, and photos to create your invitation." },
+        { property: "og:title", content: "Create Your Ethiopian Wedding Invitation — Tizita" },
+        { property: "og:description", content: "Customize and publish your own beautiful bilingual wedding invitation." },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+    };
+  },
+  component: Builder,
 });
 const MAX_GALLERY_IMAGES = 12;
 const steps = ["Couple", "Details", "Story", "Photos", "RSVP", "Preview"];
@@ -92,7 +111,9 @@ function missingForStep(step: number, d: WeddingInvitation): string[] {
   return missing;
 }
 function Builder() {
-  const { templateId } = Route.useParams(); const id = templateId as TemplateId; const navigate = useNavigate();
+  const { templateId } = Route.useParams();
+  const id = normalizeTemplateId(templateId);
+  const navigate = useNavigate();
   const search = Route.useSearch();
   const editInvitationId = search.edit;
   const isEditing = Boolean(editInvitationId);
@@ -309,7 +330,7 @@ function Builder() {
         </Button>
         <div className="builder-brand">
           <span>ትዝታ</span>
-          <strong>{templateMeta[id].name}{isEditing ? " (Editing)" : ""}</strong>
+          <strong>{templateMeta[id]?.name ?? "Custom AI Template"}{isEditing ? " (Editing)" : ""}</strong>
         </div>
         <span className="autosave"><Check/> {isEditing ? "Editing invitation" : "Draft saved"}</span>
       </header>
@@ -724,15 +745,15 @@ function Builder() {
                 Print to Image
               </Button>
             )}
-            {step<5?<Button onClick={next}>Continue<ArrowRight/></Button>:<Button onClick={publish} disabled={saving}>{saving?<LoaderCircle className="spin"/>:<Share2/>}{isEditing ? "Save Changes" : (paid?`Continue to payment · ${formatEtb(TEMPLATE_PRICE_ETB[id])}`:"Generate My Invitation")}</Button>}
+            {step<5?<Button onClick={next}>Continue<ArrowRight/></Button>:<Button onClick={publish} disabled={saving}>{saving?<LoaderCircle className="spin"/>:<Share2/>}{isEditing ? "Save Changes" : (paid?`Continue to payment · ${formatEtb(TEMPLATE_PRICE_ETB[id] ?? 0)}`:"Generate My Invitation")}</Button>}
           </div>
         </section>
 
         <aside className="live-preview">
           <div className="preview-label">
             <div><span>LIVE PREVIEW</span><i/></div>
-            <strong>{templateMeta[id].name}</strong>
-            {paid && <em className="tier-badge paid">{formatEtb(TEMPLATE_PRICE_ETB[id])} · Premium</em>}
+            <strong>{templateMeta[id]?.name ?? "Custom AI Template"}</strong>
+            {paid && <em className="tier-badge paid">{formatEtb(TEMPLATE_PRICE_ETB[id] ?? 0)} · Premium</em>}
             <Button
               type="button"
               size="sm"

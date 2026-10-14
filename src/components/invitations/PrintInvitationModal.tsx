@@ -35,6 +35,7 @@ const fallbackPhotos: Record<TemplateId, string> = {
   traditional: charlesPhoto,
   "olivia-ethan": oliviaPhoto,
   "custom-ai": royalPhoto,
+  "custome-ai": royalPhoto,
 };
 
 interface PrintInvitationModalProps {
@@ -393,7 +394,7 @@ function PrintableCardContent({
   const t = inviteCopy[lang];
 
   // 0. AI Custom Template
-  if (i.templateId === "custom-ai") {
+  if (i.templateId === "custom-ai" || (i.templateId as string) === "custome-ai") {
     const venueText = localized(lang === "am" ? i.venueAm : i.venue, lang === "am" ? i.venue : i.venueAm);
     const addressText = localized(lang === "am" ? i.addressAm : i.address, lang === "am" ? i.address : i.addressAm);
     const message = localized(

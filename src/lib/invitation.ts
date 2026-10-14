@@ -1,5 +1,11 @@
-export const TEMPLATE_IDS = ["royal-tewahedo", "addis-modern", "habesha-romance", "lalibela-stone", "buna-coffee", "wonderland", "traditional", "olivia-ethan", "custom-ai"] as const;
+export const TEMPLATE_IDS = ["royal-tewahedo", "addis-modern", "habesha-romance", "lalibela-stone", "buna-coffee", "wonderland", "traditional", "olivia-ethan", "custom-ai", "custome-ai"] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
+
+export function normalizeTemplateId(id: string): TemplateId {
+  const clean = id.toLowerCase().trim();
+  if (clean === "custome-ai") return "custom-ai";
+  return clean as TemplateId;
+}
 
 export interface WeddingInvitation {
   id?: string;
@@ -48,6 +54,7 @@ export const templateMeta: Record<TemplateId, { name: string; number: string; de
   traditional: { name: "Traditional", number: "07", description: "Woven tibeb borders, a stepped church cross, and the coffee ceremony, as printed in the market." },
   "olivia-ethan": { name: "Garden Arch", number: "08", description: "A refined garden arch layout with leaf corner motifs and classic typography." },
   "custom-ai": { name: "Custom AI Template", number: "09", description: "A bespoke wedding invitation design crafted by AI inspired by your reference image." },
+  "custome-ai": { name: "Custom AI Template", number: "09", description: "A bespoke wedding invitation design crafted by AI inspired by your reference image." },
 };
 
 export const sampleInvitation: WeddingInvitation = {
@@ -120,7 +127,14 @@ export function youtubeVideoId(url: string | undefined | null): string | null {
   return null;
 }
 
-export function formatWeddingDate(date: string) {
-  if (!date) return "12 · 12 · 2026";
-  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(new Date(`${date}T12:00:00`));
+export function formatWeddingDate(date: string | undefined | null) {
+  if (!date) return "December 12, 2026";
+  try {
+    const d = new Date(`${date}T12:00:00`);
+    if (isNaN(d.getTime())) return date;
+    return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(d);
+  } catch {
+    return date;
+  }
 }
+

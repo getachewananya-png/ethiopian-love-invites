@@ -35,6 +35,7 @@ const fallbackPhotos: Record<TemplateId, string> = {
   traditional: charlesPhoto,
   "olivia-ethan": oliviaPhoto,
   "custom-ai": royalPhoto,
+  "custome-ai": royalPhoto,
 };
 
 export interface InvitationRendererProps {
@@ -54,9 +55,9 @@ export function InvitationRenderer({
   lang = "am",
   onLangChange,
 }: InvitationRendererProps) {
-  const hero = invitation.primaryPhotoUrl || fallbackPhotos[invitation.templateId];
+  const hero = invitation.primaryPhotoUrl || fallbackPhotos[invitation.templateId] || royalPhoto;
   const shared = { invitation, hero, compact, slug, token, lang, onLangChange };
-  if (invitation.templateId === "custom-ai") return <CustomAiTemplate {...shared} />;
+  if (invitation.templateId === "custom-ai" || (invitation.templateId as string) === "custome-ai") return <CustomAiTemplate {...shared} />;
   if (invitation.templateId === "addis-modern") return <Addis {...shared} />;
   if (invitation.templateId === "habesha-romance") return <Romance {...shared} />;
   if (invitation.templateId === "lalibela-stone") return <Lalibela {...shared} />;
@@ -901,11 +902,11 @@ function CustomAiTemplate({
   };
 
   return (
-    <main className={`invitation custom-ai-invite reveal-on ${compact ? "invite-compact" : ""}`} lang={lang}>
-      <LangToggle lang={lang} onLangChange={onLangChange} />
-      <BackgroundMusic url={i.musicUrl} compact={compact} />
+    <article className={`invitation custom-ai-invite ${!compact ? "reveal-on" : "invite-compact"}`} lang={lang}>
+      {!compact && <LangToggle lang={lang} onLangChange={onLangChange} />}
+      {!compact && <BackgroundMusic url={i.musicUrl} compact={compact} />}
 
-      <article className="custom-ai-sheet" style={{ maxWidth: "760px", margin: "0 auto", padding: compact ? "12px 8px" : "32px 16px" }}>
+      <div className="custom-ai-sheet" style={{ maxWidth: "760px", margin: "0 auto", padding: compact ? "12px 8px" : "32px 16px" }}>
         {/* AI Badge */}
         <div className="custom-ai-header-badge" style={{ textAlign: "center", marginBottom: "16px" }} data-reveal data-fly="up">
           <span className="ai-badge-pill" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 14px", borderRadius: "999px", background: "linear-gradient(135deg, oklch(0.95 0.05 75), oklch(0.92 0.08 45))", color: "oklch(0.3 0.1 40)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", border: "1px solid oklch(0.85 0.08 60 / 60%)" }}>
@@ -997,7 +998,7 @@ function CustomAiTemplate({
 
         <Gallery images={i.galleryImages} hero={hero} lang={lang} />
         <Closing invitation={i} slug={slug} token={token} lang={lang} />
-      </article>
-    </main>
+      </div>
+    </article>
   );
 }
