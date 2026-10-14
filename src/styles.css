@@ -2352,11 +2352,67 @@ label.field textarea.large,
 .addis-printable-sheet,
 .romance-printable-sheet,
 .lalibela-printable-sheet,
-.buna-printable-sheet {
+.buna-printable-sheet,
+.custom-ai-printable-sheet {
   box-shadow: none !important;
   border-radius: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
+}
+
+/* ===== AI CUSTOM TEMPLATE & PRINT PERFECTION ===== */
+.custom-ai-invite {
+  background: radial-gradient(circle at 50% 0%, oklch(0.99 0.02 85) 0%, oklch(0.97 0.015 75) 100%);
+  color: oklch(0.2 0.03 35);
+}
+.dark .custom-ai-invite {
+  background: radial-gradient(circle at 50% 0%, oklch(0.18 0.02 55) 0%, oklch(0.14 0.015 45) 100%);
+  color: oklch(0.92 0.02 85);
+}
+
+.custom-ai-hero-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  display: block;
+}
+
+.custom-ai-printable-sheet {
+  width: 680px !important;
+  max-width: 680px !important;
+  min-width: 680px !important;
+  margin: 0 !important;
+  padding: 32px 24px !important;
+  background-color: #ffffff !important;
+  color: oklch(0.2 0.03 35) !important;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
+}
+
+.ai-generator-card {
+  border: 1px solid oklch(0.85 0.08 70 / 60%) !important;
+  background: linear-gradient(135deg, oklch(0.99 0.015 85) 0%, oklch(0.97 0.02 65) 100%) !important;
+}
+.dark .ai-generator-card {
+  border-color: oklch(0.4 0.06 60 / 60%) !important;
+  background: linear-gradient(135deg, oklch(0.2 0.02 60) 0%, oklch(0.16 0.02 40) 100%) !important;
+}
+
+/* Ensure no animations or responsive transforms cause left padding or right text clipping on export */
+.printable-card-sheet,
+.printable-card-sheet * {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.printable-card-sheet h1,
+.printable-card-sheet h2,
+.printable-card-sheet h3,
+.printable-card-sheet p,
+.printable-card-sheet span {
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
 

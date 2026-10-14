@@ -122,6 +122,18 @@ interface TemplateItem {
 
 const templates: TemplateItem[] = [
   {
+    id: "custom-ai",
+    name: "AI Custom Template",
+    amName: "በ AI የተሰራ ልዩ ዲዛይን",
+    tag: "Build Your Own · AI Reference · Bespoke",
+    description: "Upload a reference design image, and our AI crafts a custom hero invitation for you.",
+    category: "modern",
+    image: royalPhoto,
+    themeClass: "theme-royal",
+    accentLabel: "✨ AI Custom Builder",
+    features: ["Reference Image Input", "Procedural Artwork Synthesis", "Bilingual Support"],
+  },
+  {
     id: "royal-tewahedo",
     name: "Royal Tewahedo",
     amName: "ሮያል ተዋሕዶ",

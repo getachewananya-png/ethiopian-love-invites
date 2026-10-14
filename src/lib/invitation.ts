@@ -1,4 +1,4 @@
-export const TEMPLATE_IDS = ["royal-tewahedo", "addis-modern", "habesha-romance", "lalibela-stone", "buna-coffee", "wonderland", "traditional", "olivia-ethan"] as const;
+export const TEMPLATE_IDS = ["royal-tewahedo", "addis-modern", "habesha-romance", "lalibela-stone", "buna-coffee", "wonderland", "traditional", "olivia-ethan", "custom-ai"] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
 export interface WeddingInvitation {
@@ -30,6 +30,10 @@ export interface WeddingInvitation {
   mapsUrl?: string;
   /** YouTube link (watch/youtu.be/embed/shorts) for background music. */
   musicUrl?: string;
+  /** Reference image uploaded by couple for custom AI template building */
+  referenceImageUrl?: string;
+  /** Optional custom theme/style extracted from reference design */
+  aiStylePreset?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -43,6 +47,7 @@ export const templateMeta: Record<TemplateId, { name: string; number: string; de
   "wonderland": { name: "Wonderland", number: "06", description: "An ornate printed keepsake, framed in gold filigree with a portrait up top." },
   traditional: { name: "Traditional", number: "07", description: "Woven tibeb borders, a stepped church cross, and the coffee ceremony, as printed in the market." },
   "olivia-ethan": { name: "Garden Arch", number: "08", description: "A refined garden arch layout with leaf corner motifs and classic typography." },
+  "custom-ai": { name: "Custom AI Template", number: "09", description: "A bespoke wedding invitation design crafted by AI inspired by your reference image." },
 };
 
 export const sampleInvitation: WeddingInvitation = {

@@ -30,6 +30,16 @@ export interface TemplatePickerItem {
 
 export const TEMPLATES_CATALOG: TemplatePickerItem[] = [
   {
+    id: "custom-ai",
+    name: "AI Custom Template",
+    amName: "በ AI የተሰራ ልዩ ዲዛይን",
+    tag: "Build Your Own · AI Reference · Bespoke",
+    description: "Upload a reference design image, and our AI crafts a custom hero invitation for you.",
+    category: "modern",
+    image: royalPhoto,
+    badge: "✨ AI Custom Builder",
+  },
+  {
     id: "royal-tewahedo",
     name: "Royal Tewahedo",
     amName: "ሮያል ተዋሕዶ",
@@ -141,14 +151,51 @@ export function TemplatePickerModal({
             Choose Your Invitation Design
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
-            Select a design to start personalizing your wedding invitation. You can customize all
-            details, photos, music, and schedules in the builder.
+            Select an authentic Ethiopian design, or build your own custom invitation with our AI assistant from a reference design.
           </DialogDescription>
 
+          {/* AI Custom Template Quick Banner */}
+          <div className="mt-3 p-3.5 rounded-xl border border-primary/30 bg-gradient-to-r from-amber-500/10 via-primary/10 to-rose-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                  Build My Own Template
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">
+                    AI Reference
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Have a design you love? Provide a reference image and let AI craft your hero invitation artwork.
+                </p>
+              </div>
+            </div>
+            <Button
+              asChild
+              size="sm"
+              className="bg-primary text-primary-foreground font-semibold shrink-0 shadow-sm"
+            >
+              <Link
+                to="/create/$templateId"
+                params={{ templateId: "custom-ai" }}
+                search={{}}
+                onClick={() => {
+                  onSelect?.("custom-ai");
+                  onOpenChange(false);
+                }}
+              >
+                Build with AI
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Link>
+            </Button>
+          </div>
+
           {/* Category Filter Pills */}
-          <div className="flex items-center gap-1.5 pt-2 flex-wrap">
+          <div className="flex items-center gap-1.5 pt-3 flex-wrap">
             {[
-              { id: "all", label: "All Designs (8)" },
+              { id: "all", label: `All Designs (${TEMPLATES_CATALOG.length})` },
               { id: "traditional", label: "Traditional & Sacred" },
               { id: "modern", label: "Modern & Editorial" },
               { id: "romantic", label: "Romantic & Garden" },

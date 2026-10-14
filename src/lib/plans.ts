@@ -15,8 +15,9 @@ export const TEMPLATE_PRICE_ETB: Record<TemplateId, number> = {
   "lalibela-stone": 0,
   "buna-coffee": 350,
   "wonderland": 0,
-  "traditional": 0,
+  traditional: 0,
   "olivia-ethan": 0,
+  "custom-ai": 0,
 };
 
 export function isPaidTemplate(templateId: TemplateId): boolean {
@@ -38,8 +39,9 @@ export const TEMPLATE_TIERS: Record<TemplateId, { tier: "free" | "paid"; label: 
   "lalibela-stone": { tier: "free", label: "Free" },
   "buna-coffee": { tier: "paid", label: formatEtb(TEMPLATE_PRICE_ETB["buna-coffee"]) },
   "wonderland": { tier: "free", label: "Free" },
-  "traditional": { tier: "free", label: "Free" },
+  traditional: { tier: "free", label: "Free" },
   "olivia-ethan": { tier: "free", label: "Free" },
+  "custom-ai": { tier: "free", label: "Free" },
 };
 
 /** Env that must exist before payments can run. Missing ones surface in the UI. */

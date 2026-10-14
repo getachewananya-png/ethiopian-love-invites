@@ -34,6 +34,7 @@ const fallbackPhotos: Record<TemplateId, string> = {
   wonderland: charlesPhoto,
   traditional: charlesPhoto,
   "olivia-ethan": oliviaPhoto,
+  "custom-ai": royalPhoto,
 };
 
 interface PrintInvitationModalProps {
@@ -81,18 +82,24 @@ export function PrintInvitationModal({
       );
 
       const target = cardRef.current;
-      const width = target.offsetWidth;
-      const height = target.offsetHeight;
+      // Strictly enforce 680px canonical card width to eliminate screen squishing
+      const exportWidth = 680;
+      const exportHeight = target.offsetHeight || target.scrollHeight || 1020;
 
       const exportFn = format === "png" ? toPng : toJpeg;
       const dataUrl = await exportFn(target, {
-        width,
-        height,
+        width: exportWidth,
+        height: exportHeight,
+        canvasWidth: exportWidth * 2,
+        canvasHeight: exportHeight * 2,
         pixelRatio: 2,
         quality: 0.96,
         cacheBust: true,
         backgroundColor: "#ffffff",
         style: {
+          width: "680px",
+          minWidth: "680px",
+          maxWidth: "680px",
           margin: "0",
           marginLeft: "0",
           marginRight: "0",
@@ -146,17 +153,22 @@ export function PrintInvitationModal({
       );
 
       const target = cardRef.current;
-      const width = target.offsetWidth;
-      const height = target.offsetHeight;
+      const exportWidth = 680;
+      const exportHeight = target.offsetHeight || target.scrollHeight || 1020;
 
       // Render high-res PNG and print via dedicated window for 100% pixel-perfect print
       const dataUrl = await toPng(target, {
-        width,
-        height,
+        width: exportWidth,
+        height: exportHeight,
+        canvasWidth: exportWidth * 2.5,
+        canvasHeight: exportHeight * 2.5,
         pixelRatio: 2.5,
         quality: 0.98,
         backgroundColor: "#ffffff",
         style: {
+          width: "680px",
+          minWidth: "680px",
+          maxWidth: "680px",
           margin: "0",
           marginLeft: "0",
           marginRight: "0",
@@ -325,7 +337,7 @@ export function PrintInvitationModal({
 
         {/* Scrollable Card Preview Container */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex items-center justify-center bg-[oklch(0.96_0.005_80)] dark:bg-neutral-900">
-          <div className="print-canvas-wrapper relative flex justify-center py-2" style={{ width: "100%", margin: 0, padding: 0 }}>
+          <div className="print-canvas-wrapper relative flex justify-center py-2" style={{ width: "100%", overflowX: "auto", margin: 0, padding: 0 }}>
             {/* Visual shadow container for preview modal display only - not captured by html-to-image */}
             <div className="print-preview-shadow-wrapper shadow-2xl rounded-xl overflow-hidden" style={{ margin: "0 auto", padding: 0, display: "inline-flex" }}>
               {/* The exact printable card container captured by html-to-image - zero margins, exact sizing */}
@@ -334,11 +346,13 @@ export function PrintInvitationModal({
                 className="printable-card-sheet bg-white text-foreground relative overflow-hidden"
                 style={{
                   width: "680px",
-                  maxWidth: "100%",
+                  minWidth: "680px",
+                  maxWidth: "680px",
                   margin: 0,
                   padding: 0,
                   backgroundColor: "#ffffff",
                   boxShadow: "none",
+                  boxSizing: "border-box",
                 }}
               >
                 <PrintableCardContent
@@ -377,6 +391,65 @@ function PrintableCardContent({
   lang: InviteLang;
 }) {
   const t = inviteCopy[lang];
+
+  // 0. AI Custom Template
+  if (i.templateId === "custom-ai") {
+    const venueText = localized(lang === "am" ? i.venueAm : i.venue, lang === "am" ? i.venue : i.venueAm);
+    const addressText = localized(lang === "am" ? i.addressAm : i.address, lang === "am" ? i.address : i.addressAm);
+    const message = localized(
+      lang === "am" ? i.customMessageAm : i.customMessage,
+      lang === "am" ? i.customMessage : i.customMessageAm
+    ) || t.fallbackMessage;
+
+    return (
+      <article className="invitation custom-ai-invite custom-ai-printable-sheet" lang={lang} style={{ width: "100%", margin: 0, padding: "36px 24px", boxSizing: "border-box", background: "#ffffff", color: "oklch(0.2 0.03 35)" }}>
+        <section className="custom-ai-printable-hero" style={{ textAlign: "center", margin: "0 auto", padding: 0 }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "999px", background: "oklch(0.96 0.04 75)", border: "1px solid oklch(0.85 0.08 60)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "oklch(0.35 0.1 40)", marginBottom: "14px" }}>
+            ✦ {lang === "am" ? "በ AI የተሰራ ልዩ ዲዛይን" : "AI CUSTOM WEDDING INVITATION"} ✦
+          </div>
+
+          <div style={{ maxWidth: "400px", margin: "0 auto 20px", borderRadius: "18px", overflow: "hidden", border: "2px solid oklch(0.85 0.06 60)", boxShadow: "0 8px 24px oklch(0 0 0 / 0.08)" }}>
+            <img src={hero} alt={`${i.brideName} & ${i.groomName}`} style={{ width: "100%", height: "auto", display: "block" }} />
+          </div>
+
+          <p style={{ fontSize: "0.8125rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "oklch(0.5 0.12 45)", fontWeight: 600, margin: "0 0 8px" }}>
+            {t.kickerRoyal}
+          </p>
+
+          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "2.35rem", fontWeight: 650, margin: "0 0 6px", lineHeight: 1.15, wordBreak: "break-word" }}>
+            <span>{i.brideName}</span>
+            <em style={{ fontStyle: "italic", margin: "0 10px", color: "oklch(0.55 0.15 45)" }}>&amp;</em>
+            <span>{i.groomName}</span>
+          </h1>
+
+          {(i.brideNameAm || i.groomNameAm) && (
+            <p lang="am" style={{ fontFamily: "'Noto Sans Ethiopic', sans-serif", fontSize: "1.15rem", color: "oklch(0.45 0.08 35)", margin: "0 0 12px" }}>
+              {i.brideNameAm} ፧ {i.groomNameAm}
+            </p>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", margin: "14px auto", maxWidth: "220px" }}>
+            <span style={{ flex: 1, height: "1px", background: "oklch(0.8 0.06 60 / 50%)" }} />
+            <span style={{ color: "oklch(0.55 0.15 45)", fontSize: "14px" }}>✚</span>
+            <span style={{ flex: 1, height: "1px", background: "oklch(0.8 0.06 60 / 50%)" }} />
+          </div>
+
+          <p style={{ fontSize: "1.2rem", fontWeight: 600, margin: "10px 0 14px", color: "oklch(0.2 0.03 35)" }}>
+            {formatWeddingDate(i.weddingDate)} {i.weddingTime ? `· ${i.weddingTime}` : ""}
+          </p>
+
+          <p style={{ maxWidth: "500px", margin: "0 auto", lineHeight: 1.6, fontSize: "0.95rem", color: "oklch(0.38 0.04 40)", fontStyle: "italic" }}>
+            "{message}"
+          </p>
+
+          <div style={{ marginTop: 20, borderTop: "1px solid oklch(0.88 0.04 60)", paddingTop: 16 }}>
+            <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontFamily: "'Playfair Display', Georgia, serif", wordBreak: "break-word" }}>{venueText}</h2>
+            {addressText && <p style={{ fontSize: "0.95rem", color: "oklch(0.45 0.04 40)", margin: 0, wordBreak: "break-word" }}>{addressText}</p>}
+          </div>
+        </section>
+      </article>
+    );
+  }
 
   // 1. Olivia & Ethan
   if (i.templateId === "olivia-ethan") {

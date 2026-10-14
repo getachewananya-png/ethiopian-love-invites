@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, GripVertical, ImagePlus, LoaderCircle, Mail, MapPin, Phone, Printer, Share2, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, GripVertical, ImagePlus, LoaderCircle, Mail, MapPin, Palette, Phone, Printer, RefreshCw, Share2, Sparkles, Trash2, Upload, Wand2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
@@ -16,6 +16,13 @@ import { isPaidTemplate, TEMPLATE_PRICE_ETB, formatEtb } from "@/lib/plans";
 import { useAuth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/utils";
 import { sampleInvitation, TEMPLATE_IDS, templateMeta, type TemplateId, type WeddingInvitation } from "@/lib/invitation";
+import {
+  extractReferencePalette,
+  generateAiHeroArtwork,
+  AI_STYLE_PRESETS,
+  type AiStylePreset,
+  type ExtractedPalette,
+} from "@/lib/ai-template-generator";
 
 export const Route = createFileRoute("/create/$templateId")({
   validateSearch: (search: Record<string, unknown>): { edit?: string | undefined } => ({
@@ -75,8 +82,12 @@ function missingForStep(step: number, d: WeddingInvitation): string[] {
     if (typeof value !== "string" || !value.trim()) missing.push(field.label);
   }
   if (step === 3) {
-    if (!d.primaryPhotoUrl?.trim()) missing.push("Main couple photo");
-    if (!d.galleryImages.length) missing.push("At least one gallery photo");
+    if (!d.primaryPhotoUrl?.trim()) {
+      missing.push(d.templateId === "custom-ai" ? "Reference design or hero artwork" : "Main couple photo");
+    }
+    if (!d.galleryImages.length && d.templateId !== "custom-ai") {
+      missing.push("At least one gallery photo");
+    }
   }
   return missing;
 }
@@ -87,6 +98,10 @@ function Builder() {
   const isEditing = Boolean(editInvitationId);
 
   const [step,setStep]=useState(0); const [saving,setSaving]=useState(false); const [loadingEdit,setLoadingEdit]=useState(isEditing); const [success,setSuccess]=useState<string>(); const [qr,setQr]=useState<string>(); const [drag,setDrag]=useState<string|null>(null); const [printModalOpen,setPrintModalOpen]=useState(false); const heroRef=useRef<HTMLInputElement>(null); const galleryRef=useRef<HTMLInputElement>(null);
+  const referenceRef=useRef<HTMLInputElement>(null);
+  const [generatingAiHero, setGeneratingAiHero] = useState(false);
+  const [aiPreset, setAiPreset] = useState<AiStylePreset>("royal-burgundy-gold");
+  const [extractedPalette, setExtractedPalette] = useState<ExtractedPalette | null>(null);
   const storageKey=`tizita-draft-${id}`;
   const [data,setData]=useState<WeddingInvitation>(()=>({...sampleInvitation,templateId:id,brideName:"",groomName:"",brideNameAm:"",groomNameAm:"",primaryPhotoUrl:"",galleryImages:[]}));
   // Autosave must not run before the saved draft has been read back, or the
@@ -156,6 +171,61 @@ function Builder() {
   /** Uploads one file into either the hero slot or the gallery. */
   const uploadOne=async(file:File,target:"hero"|"gallery")=>{const base64=await fileToBase64(file); const result=await uploadWeddingImage({data:{name:file.name,mimeType:file.type as "image/jpeg"|"image/png"|"image/webp",base64}}); setData(current=>{if(target==="hero")return{...current,primaryPhotoUrl:result.url}; const rest=current.galleryImages.length>=MAX_GALLERY_IMAGES?current.galleryImages:[...current.galleryImages,result.url]; return{...current,galleryImages:rest}});};
   const handleFiles=async(files:FileList|File[],target:"hero"|"gallery")=>{for(const file of Array.from(files)){if(!["image/jpeg","image/png","image/webp"].includes(file.type)){toast.error(`${file.name} is not a supported image.`);continue} if(file.size>10*1024*1024){toast.error(`${file.name} is over 10MB.`);continue} if(target==="hero"&&Array.from(files).length>1){toast.error("The main photo is a single image — pick just one.");break} if(target==="gallery"&&data.galleryImages.length>=MAX_GALLERY_IMAGES){toast.error(`You can add up to ${MAX_GALLERY_IMAGES} gallery photos.`);break} setSaving(true); try{await uploadOne(file,target); toast.success(`${file.name} uploaded`)}catch(error){toast.error(error instanceof Error?error.message:"Image upload failed")}finally{setSaving(false)}}};
+
+  const handleReferenceFile = async (files: FileList | File[]) => {
+    const file = Array.from(files)[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error(`${file.name} is not a supported image.`);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(`${file.name} is over 10MB.`);
+      return;
+    }
+    setSaving(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setData((curr) => ({ ...curr, referenceImageUrl: dataUrl }));
+      const palette = await extractReferencePalette(dataUrl);
+      setExtractedPalette(palette);
+      toast.success("Reference design analyzed! Now click 'Generate AI Hero Artwork'.");
+    } catch (err) {
+      console.error("Reference upload error:", err);
+      toast.error("Could not process reference design image");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGenerateAiHero = async (presetOverride?: AiStylePreset) => {
+    const targetPreset = presetOverride || (data.aiStylePreset as AiStylePreset) || aiPreset;
+    setGeneratingAiHero(true);
+    try {
+      const artwork = await generateAiHeroArtwork({
+        brideName: data.brideName || "Hana Tesfaye",
+        groomName: data.groomName || "Abebe Mekonnen",
+        brideNameAm: data.brideNameAm,
+        groomNameAm: data.groomNameAm,
+        weddingDate: data.weddingDate || "2025-08-24",
+        venue: data.venue || "Addis Ababa",
+        venueAm: data.venueAm,
+        preset: targetPreset,
+        referenceImageDataUrl: data.referenceImageUrl,
+      });
+      setData((curr) => ({
+        ...curr,
+        primaryPhotoUrl: artwork,
+        aiStylePreset: targetPreset,
+      }));
+      toast.success("✨ Custom AI hero section artwork generated!");
+    } catch (err) {
+      console.error("AI hero generation error:", err);
+      toast.error("Could not generate AI hero artwork. Please try again.");
+    } finally {
+      setGeneratingAiHero(false);
+    }
+  };
   const paid = isPaidTemplate(id);
   const { user, loading: authLoading } = useAuth();
   // Which required fields are still outstanding on the step being viewed, so the
@@ -271,23 +341,337 @@ function Builder() {
           {step===1&&<div className="form-grid"><Field label="Wedding date"><Input type="date" value={data.weddingDate} onChange={e=>update("weddingDate",e.target.value)}/></Field><Field label="Wedding time"><Input type="time" value={data.weddingTime} onChange={e=>update("weddingTime",e.target.value)}/></Field><Field label="Ceremony type"><Input value={data.ceremonyType} onChange={e=>update("ceremonyType",e.target.value)} placeholder="Ceremony & reception"/></Field><Field label="Venue"><Input value={data.venue} onChange={e=>update("venue",e.target.value)} placeholder="Hyatt Regency Addis Ababa"/></Field><Field label="Venue in Amharic"><Input lang="am" value={data.venueAm} onChange={e=>update("venueAm",e.target.value)} placeholder="ሃያት ሪጀንሲ አዲስ አበባ"/></Field><Field label="Address"><Input value={data.address} onChange={e=>update("address",e.target.value)} placeholder="Meskel Square, Addis Ababa"/></Field><Field label="Address in Amharic"><Input lang="am" value={data.addressAm} onChange={e=>update("addressAm",e.target.value)} placeholder="መስቀል አደባባይ፣ አዲስ አበባ"/></Field><Field label="Google Maps link" optional><Input type="url" value={data.mapsUrl} onChange={e=>update("mapsUrl",e.target.value)} placeholder="https://maps.google.com/..."/></Field><Field label="Background music (YouTube)" optional><Input type="url" value={data.musicUrl} onChange={e=>update("musicUrl",e.target.value)} placeholder="https://youtube.com/watch?v=..."/></Field></div>}
           {step===2&&<div className="form-stack"><Field label="How you met"><Textarea value={data.howWeMet} onChange={e=>update("howWeMet",e.target.value)} placeholder="A chance meeting over coffee..." maxLength={2000}/></Field><Field label="Your love story"><Textarea className="large" value={data.story} onChange={e=>update("story",e.target.value)} placeholder="Tell your guests about the path that brought you here..." maxLength={5000}/></Field><Field label="Your story in Amharic"><Textarea lang="am" value={data.storyAm} onChange={e=>update("storyAm",e.target.value)} placeholder="የፍቅር ታሪካችሁን በአማርኛ ያካፍሉ..." maxLength={5000}/></Field></div>}
           {step===3&&<div className="upload-sections">
+            {/* AI Custom Template Reference & Hero Generator Section */}
+            {(id === "custom-ai" || data.referenceImageUrl) && (
+              <section className="upload-card ai-generator-card">
+                <header className="upload-head">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wider uppercase bg-primary/15 text-primary">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        AI Reference Design
+                      </span>
+                    </div>
+                    <h3>Reference Design Image &amp; AI Hero Generator</h3>
+                    <p>
+                      Upload a photo of an invitation design, pattern, or aesthetic you love. Our AI analyzes its color palette and composes a custom hero section artwork.
+                    </p>
+                  </div>
+                </header>
+
+                <div className="ai-ref-container space-y-4">
+                  {/* Reference Image Dropzone */}
+                  <div
+                    className={`dropzone ${drag === "reference" ? "dragging" : ""}`}
+                    onDragOver={(e) => { e.preventDefault(); setDrag("reference"); }}
+                    onDragLeave={() => setDrag(null)}
+                    onDrop={(e: DragEvent) => {
+                      e.preventDefault();
+                      setDrag(null);
+                      if (e.dataTransfer.files) void handleReferenceFile(e.dataTransfer.files);
+                    }}
+                  >
+                    <input
+                      ref={referenceRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      hidden
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                        e.target.files && void handleReferenceFile(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                    {data.referenceImageUrl ? (
+                      <div className="upload-preview flex flex-col items-center gap-2 py-2">
+                        <div className="relative rounded-lg overflow-hidden border border-border shadow-sm max-h-48 max-w-xs">
+                          <img
+                            src={data.referenceImageUrl}
+                            alt="Reference design preview"
+                            className="object-cover max-h-48 w-auto rounded-lg"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={saving || generatingAiHero}
+                            onClick={() => referenceRef.current?.click()}
+                          >
+                            <Upload className="w-3.5 h-3.5 mr-1.5" />
+                            Change Reference Image
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              update("referenceImageUrl", "");
+                              setExtractedPalette(null);
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {saving ? <LoaderCircle className="spin" /> : <Wand2 className="w-8 h-8 text-primary" />}
+                        <h3>Drop your reference design image here</h3>
+                        <p>Upload a card photo, pattern, or wedding style you want AI to recreate</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={saving || generatingAiHero}
+                          onClick={() => referenceRef.current?.click()}
+                        >
+                          Choose Reference Image
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Extracted Palette Display (if analyzed) */}
+                  {extractedPalette && (
+                    <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Palette className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-semibold">Analyzed Palette from Reference:</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {[
+                          { label: "Primary", col: extractedPalette.primary },
+                          { label: "Secondary", col: extractedPalette.secondary },
+                          { label: "Accent", col: extractedPalette.accent },
+                          { label: "Background", col: extractedPalette.background },
+                        ].map((chip) => (
+                          <div
+                            key={chip.label}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white dark:bg-card border border-border shadow-xs"
+                            title={`${chip.label}: ${chip.col}`}
+                          >
+                            <span
+                              className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0"
+                              style={{ backgroundColor: chip.col }}
+                            />
+                            <span className="text-[11px] font-mono text-muted-foreground">{chip.col}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Style & Motif Preset Selector */}
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground flex items-center justify-between">
+                      <span>Choose AI Style &amp; Motif Aesthetic</span>
+                      <span className="font-normal text-[11px] text-primary">Procedural Ethiopian Synthesis</span>
+                    </Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                      {AI_STYLE_PRESETS.map((preset) => {
+                        const isSelected = (data.aiStylePreset || aiPreset) === preset.id;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            className={`p-3 rounded-xl border text-left transition-all ${
+                              isSelected
+                                ? "border-primary bg-primary/10 shadow-sm"
+                                : "border-border/60 hover:border-border hover:bg-muted/40"
+                            }`}
+                            onClick={() => {
+                              setAiPreset(preset.id);
+                              update("aiStylePreset", preset.id);
+                            }}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <strong className="text-xs font-semibold text-foreground">{preset.name}</strong>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground line-clamp-2 leading-tight">
+                              {preset.description}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-2">
+                              <span
+                                className="w-3 h-3 rounded-full border border-black/10"
+                                style={{ backgroundColor: preset.palette.primary }}
+                              />
+                              <span
+                                className="w-3 h-3 rounded-full border border-black/10"
+                                style={{ backgroundColor: preset.palette.accent }}
+                              />
+                              <span
+                                className="w-3 h-3 rounded-full border border-black/10"
+                                style={{ backgroundColor: preset.palette.background }}
+                              />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Generate AI Hero Button */}
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      size="lg"
+                      className="w-full bg-gradient-to-r from-amber-600 via-primary to-rose-600 text-white font-semibold shadow-md hover:opacity-95 transition-opacity"
+                      disabled={generatingAiHero || saving}
+                      onClick={() => void handleGenerateAiHero()}
+                    >
+                      {generatingAiHero ? (
+                        <>
+                          <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
+                          Synthesizing Authentic AI Hero Artwork (1200x1500)...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Generate AI Hero Section Artwork
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-[11px] text-muted-foreground text-center mt-1.5">
+                      Combines couple names, wedding date, venue, and reference style into a high-resolution hero design.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Main Couple Photo / Generated Hero Slot */}
             <section className={`upload-card ${drag==="hero"?"dragging":""}`}>
-              <header className="upload-head"><div><h3><span className="upload-step">1</span> Main couple photo <em className="upload-required">Required</em></h3><p>This is the large photo at the top of your invitation. A portrait shot of you both works best.</p></div></header>
-              <div className="dropzone" onDragOver={(e)=>{e.preventDefault();setDrag("hero")}} onDragLeave={()=>setDrag(null)} onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"hero")}}>
-                <input ref={heroRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"hero");e.target.value=""}}/>
-                {data.primaryPhotoUrl
-                  ? <div className="upload-preview tall"><img src={data.primaryPhotoUrl} alt="Main couple photo preview"/><Button type="button" variant="outline" size="sm" disabled={saving} onClick={()=>heroRef.current?.click()}>{saving?<LoaderCircle className="spin"/>:<Upload/>}Replace</Button><Button type="button" variant="ghost" size="sm" onClick={()=>update("primaryPhotoUrl","")}>Remove</Button></div>
-                  : <>{saving?<LoaderCircle className="spin"/>:<ImagePlus/>}<h3>Drop your main photo here</h3><p>One photo · JPG, PNG or WebP · max 10MB</p><Button type="button" variant="outline" disabled={saving} onClick={()=>heroRef.current?.click()}>Choose photo</Button></>}
+              <header className="upload-head">
+                <div>
+                  <h3>
+                    <span className="upload-step">{id === "custom-ai" ? "2" : "1"}</span>
+                    {id === "custom-ai" ? "Main Hero Section (Generated or Portrait)" : "Main couple photo"}
+                    <em className="upload-required">Required</em>
+                  </h3>
+                  <p>
+                    {id === "custom-ai"
+                      ? "This is the hero section artwork for your invitation. Use the AI generated artwork above or upload a portrait photo."
+                      : "This is the large photo at the top of your invitation. A portrait shot of you both works best."}
+                  </p>
+                </div>
+              </header>
+              <div
+                className="dropzone"
+                onDragOver={(e)=>{e.preventDefault();setDrag("hero")}}
+                onDragLeave={()=>setDrag(null)}
+                onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"hero")}}
+              >
+                <input
+                  ref={heroRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  hidden
+                  onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"hero");e.target.value=""}}
+                />
+                {data.primaryPhotoUrl ? (
+                  <div className="upload-preview tall">
+                    <img src={data.primaryPhotoUrl} alt="Main couple photo preview" />
+                    <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
+                      {id === "custom-ai" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={generatingAiHero || saving}
+                          onClick={() => void handleGenerateAiHero()}
+                        >
+                          {generatingAiHero ? <LoaderCircle className="spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+                          Regenerate AI Artwork
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={saving}
+                        onClick={()=>heroRef.current?.click()}
+                      >
+                        {saving?<LoaderCircle className="spin"/>:<Upload className="w-3.5 h-3.5 mr-1"/>}
+                        Upload Photo Instead
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={()=>update("primaryPhotoUrl","")}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {saving?<LoaderCircle className="spin"/>:<ImagePlus/>}
+                    <h3>Drop your hero photo or generated artwork here</h3>
+                    <p>One photo · JPG, PNG or WebP · max 10MB</p>
+                    <Button type="button" variant="outline" disabled={saving} onClick={()=>heroRef.current?.click()}>
+                      Choose photo
+                    </Button>
+                  </>
+                )}
               </div>
             </section>
 
+            {/* Gallery Photos Slot */}
             <section className={`upload-card ${drag==="gallery"?"dragging":""}`}>
-              <header className="upload-head"><div><h3><span className="upload-step">2</span> Gallery photos <em className="upload-required">At least 1</em></h3><p>Moments from your engagement, the ceremony, or you both. These appear in the gallery strip.</p></div><span className="upload-count">{data.galleryImages.length} / {MAX_GALLERY_IMAGES}</span></header>
-              <div className="dropzone" onDragOver={(e)=>{e.preventDefault();setDrag("gallery")}} onDragLeave={()=>setDrag(null)} onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"gallery")}}>
-                <input ref={galleryRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"gallery");e.target.value=""}}/>
-                {saving?<LoaderCircle className="spin"/>:<Upload/>}<h3>Drop gallery photos here</h3><p>Select several at once · max 10MB each</p><Button type="button" variant="outline" disabled={saving||data.galleryImages.length>=MAX_GALLERY_IMAGES} onClick={()=>galleryRef.current?.click()}>Add photos</Button>
+              <header className="upload-head">
+                <div>
+                  <h3>
+                    <span className="upload-step">{id === "custom-ai" ? "3" : "2"}</span> Gallery photos{" "}
+                    {id === "custom-ai" ? (
+                      <em className="upload-optional text-xs font-normal text-muted-foreground">(Optional)</em>
+                    ) : (
+                      <em className="upload-required">At least 1</em>
+                    )}
+                  </h3>
+                  <p>Moments from your engagement, the ceremony, or you both. These appear in the gallery strip.</p>
+                </div>
+                <span className="upload-count">{data.galleryImages.length} / {MAX_GALLERY_IMAGES}</span>
+              </header>
+              <div
+                className="dropzone"
+                onDragOver={(e)=>{e.preventDefault();setDrag("gallery")}}
+                onDragLeave={()=>setDrag(null)}
+                onDrop={(e:DragEvent)=>{e.preventDefault();setDrag(null);void handleFiles(e.dataTransfer.files,"gallery")}}
+              >
+                <input
+                  ref={galleryRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  hidden
+                  onChange={(e:ChangeEvent<HTMLInputElement>)=>{e.target.files&&void handleFiles(e.target.files,"gallery");e.target.value=""}}
+                />
+                {saving?<LoaderCircle className="spin"/>:<Upload/>}
+                <h3>Drop gallery photos here</h3>
+                <p>Select several at once · max 10MB each</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving||data.galleryImages.length>=MAX_GALLERY_IMAGES}
+                  onClick={()=>galleryRef.current?.click()}
+                >
+                  Add photos
+                </Button>
               </div>
-              {data.galleryImages.length>0&&<div className="photo-grid">{data.galleryImages.map((image,index)=><PhotoRow key={image} image={image} label={`Gallery ${index+1}`} onDelete={()=>update("galleryImages",data.galleryImages.filter((_,i)=>i!==index))}/>)}</div>}
+              {data.galleryImages.length>0&& (
+                <div className="photo-grid">
+                  {data.galleryImages.map((image,index)=>(
+                    <PhotoRow
+                      key={image}
+                      image={image}
+                      label={`Gallery ${index+1}`}
+                      onDelete={()=>update("galleryImages",data.galleryImages.filter((_,i)=>i!==index))}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           </div>}
 
@@ -380,4 +764,5 @@ function PhotoRow({image,label,onDelete}:{image:string;label:string;onDelete:()=
 function Review({icon:Icon,label,value,onEdit}:{icon:React.ComponentType<{className?:string}>;label:string;value:string;onEdit:()=>void}){return <div className="review-item"><Icon/><div><span>{label}</span><strong>{value}</strong></div><button onClick={onEdit}>Edit</button></div>}
 function HeartIcon(){return <span className="review-heart">♥</span>}
 function fileToBase64(file:File){return new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(",")[1]??"");reader.onerror=reject;reader.readAsDataURL(file)})}
+function fileToDataUrl(file:File){return new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result)??"");reader.onerror=reject;reader.readAsDataURL(file)})}
 function Success({url,qr,onPrint}:{url:string;qr?:string|undefined;onPrint?:(()=>void)|undefined}){const copy=()=>navigator.clipboard.writeText(url).then(()=>toast.success("Invitation link copied"));return <main className="success-page"><div className="success-mark"><Check/></div><p>READY TO SHARE</p><h1>Your Invitation<br/><em>Is Ready!</em></h1><span>Your wedding invitation has been created. Share it with everyone you love.</span><div className="link-box"><div><small>Your Invitation Link</small><strong>{url}</strong></div><button onClick={copy} aria-label="Copy invitation link"><Copy/></button></div><div className="success-actions"><Button asChild size="lg"><a href={url}>Open Invitation</a></Button><Button variant="outline" size="lg" onClick={copy}><Copy/>Copy Link</Button>{onPrint&&<Button variant="outline" size="lg" onClick={onPrint}><Printer className="w-4 h-4 mr-2"/>Print / Save Image</Button>}</div><div className="share-row"><a href={`https://wa.me/?text=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">WhatsApp</a><a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">Facebook</a><a href={`https://t.me/share/url?url=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">Telegram</a>{qr&&<a href={qr} download="wedding-invitation-qr.png">Download QR</a>}</div>{qr&&<img className="qr-code" src={qr} alt="Invitation QR code"/>}<Button asChild variant="ghost"><Link to="/">Return to Tizita</Link></Button></main>}

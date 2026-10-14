@@ -34,6 +34,7 @@ const fallbackPhotos: Record<TemplateId, string> = {
   wonderland: charlesPhoto,
   traditional: charlesPhoto,
   "olivia-ethan": oliviaPhoto,
+  "custom-ai": royalPhoto,
 };
 
 export interface InvitationRendererProps {
@@ -55,6 +56,7 @@ export function InvitationRenderer({
 }: InvitationRendererProps) {
   const hero = invitation.primaryPhotoUrl || fallbackPhotos[invitation.templateId];
   const shared = { invitation, hero, compact, slug, token, lang, onLangChange };
+  if (invitation.templateId === "custom-ai") return <CustomAiTemplate {...shared} />;
   if (invitation.templateId === "addis-modern") return <Addis {...shared} />;
   if (invitation.templateId === "habesha-romance") return <Romance {...shared} />;
   if (invitation.templateId === "lalibela-stone") return <Lalibela {...shared} />;
@@ -851,6 +853,151 @@ function OliviaEthanTemplate({
 
       <Gallery images={i.galleryImages} hero={hero} lang={lang} />
       <Closing invitation={i} slug={slug} token={token} lang={lang} />
+    </main>
+  );
+}
+
+/**
+ * Custom AI Template — bespoke invitation built from reference design and AI procedural artwork.
+ */
+function CustomAiTemplate({
+  invitation: i,
+  hero,
+  compact,
+  slug,
+  token,
+  lang,
+  onLangChange,
+}: {
+  invitation: WeddingInvitation;
+  hero: string;
+  compact: boolean;
+  slug?: string | undefined;
+  token?: string | undefined;
+  lang: InviteLang;
+  onLangChange?: ((lang: InviteLang) => void) | undefined;
+}) {
+  const t = inviteCopy[lang];
+  const venueText = localized(lang === "am" ? i.venueAm : i.venue, lang === "am" ? i.venue : i.venueAm);
+  const addressText = localized(lang === "am" ? i.addressAm : i.address, lang === "am" ? i.address : i.addressAm);
+  const story = localized(lang === "am" ? i.storyAm : i.story, lang === "am" ? i.story : i.storyAm);
+  const message = localized(
+    lang === "am" ? i.customMessageAm : i.customMessage,
+    lang === "am" ? i.customMessage : i.customMessageAm
+  ) || t.fallbackMessage;
+
+  const share = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: `${i.brideName} & ${i.groomName}`,
+          text: `${i.brideName} and ${i.groomName} invite you to celebrate their wedding.`,
+          url: window.location.href,
+        });
+      } catch {
+        /* user cancelled */
+      }
+    }
+  };
+
+  return (
+    <main className={`invitation custom-ai-invite reveal-on ${compact ? "invite-compact" : ""}`} lang={lang}>
+      <LangToggle lang={lang} onLangChange={onLangChange} />
+      <BackgroundMusic url={i.musicUrl} compact={compact} />
+
+      <article className="custom-ai-sheet" style={{ maxWidth: "760px", margin: "0 auto", padding: compact ? "12px 8px" : "32px 16px" }}>
+        {/* AI Badge */}
+        <div className="custom-ai-header-badge" style={{ textAlign: "center", marginBottom: "16px" }} data-reveal data-fly="up">
+          <span className="ai-badge-pill" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 14px", borderRadius: "999px", background: "linear-gradient(135deg, oklch(0.95 0.05 75), oklch(0.92 0.08 45))", color: "oklch(0.3 0.1 40)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", border: "1px solid oklch(0.85 0.08 60 / 60%)" }}>
+            <span style={{ color: "oklch(0.55 0.18 55)" }}>✦</span>
+            <span>{lang === "am" ? "በ AI የተሰራ ልዩ ዲዛይን" : "AI Custom Template · Bespoke Design"}</span>
+          </span>
+        </div>
+
+        {/* Hero Section */}
+        <section className="custom-ai-hero" data-reveal data-fly="zoom" style={{ textAlign: "center", marginBottom: "24px" }}>
+          <div className="custom-ai-artwork-frame" style={{ maxWidth: "440px", margin: "0 auto", borderRadius: "24px", overflow: "hidden", boxShadow: "0 18px 48px oklch(0.2 0.05 40 / 18%)", border: "3px solid oklch(0.88 0.06 60 / 80%)" }}>
+            <img
+              src={hero}
+              alt={`${i.brideName} & ${i.groomName}`}
+              className="custom-ai-hero-img"
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
+          </div>
+        </section>
+
+        {/* Couple & Date Ceremony Info */}
+        <section className="custom-ai-intro" data-reveal data-fly="up" style={{ textAlign: "center", padding: "16px 0" }}>
+          <p className="custom-ai-kicker" style={{ fontSize: "0.8125rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "oklch(0.5 0.12 45)", fontWeight: 600, margin: "0 0 10px" }}>
+            {t.kickerRoyal}
+          </p>
+          <h1 className="custom-ai-names" data-reveal data-fly="left" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 650, margin: "0 0 6px", lineHeight: 1.15 }}>
+            <span>{i.brideName}</span>
+            <em style={{ fontStyle: "italic", margin: "0 10px", color: "oklch(0.55 0.15 45)" }}>&amp;</em>
+            <span>{i.groomName}</span>
+          </h1>
+          {(i.brideNameAm || i.groomNameAm) && (
+            <p className="custom-ai-names-am" lang="am" data-reveal data-fly="right" style={{ fontFamily: "'Noto Sans Ethiopic', sans-serif", fontSize: "1.15rem", color: "oklch(0.45 0.08 35)", margin: "0 0 16px" }}>
+              {i.brideNameAm} ፧ {i.groomNameAm}
+            </p>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", margin: "16px auto", maxWidth: "240px" }}>
+            <span style={{ flex: 1, height: "1px", background: "oklch(0.8 0.06 60 / 50%)" }} />
+            <span style={{ color: "oklch(0.55 0.15 45)", fontSize: "14px" }}>✚</span>
+            <span style={{ flex: 1, height: "1px", background: "oklch(0.8 0.06 60 / 50%)" }} />
+          </div>
+
+          <p className="custom-ai-date" data-reveal data-fly="up" style={{ fontSize: "1.2rem", fontWeight: 600, margin: "12px 0 16px" }}>
+            {formatWeddingDate(i.weddingDate)} {i.weddingTime ? `· ${i.weddingTime}` : ""}
+          </p>
+
+          <p className="custom-ai-message" data-reveal data-fly="up" style={{ maxWidth: "520px", margin: "0 auto", lineHeight: 1.7, color: "oklch(0.35 0.04 40)" }}>
+            {message}
+          </p>
+        </section>
+
+        {/* Venue & Details Section */}
+        <section className="custom-ai-details" data-reveal data-fly="up" style={{ padding: "24px 0 16px" }}>
+          <div className="details-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", background: "oklch(0.98 0.015 80)", border: "1px solid oklch(0.9 0.03 60 / 50%)", borderRadius: "16px", padding: "20px" }}>
+            <Detail icon={CalendarDays} label={t.when} value={`${formatWeddingDate(i.weddingDate)} · ${i.weddingTime || ""}`} tba={t.dateTba} />
+            <Detail icon={MapPin} label={t.where} value={[venueText, addressText].filter(Boolean).join(" · ")} tba={t.venueTba} />
+          </div>
+          {i.mapsUrl && (
+            <div style={{ textAlign: "center", marginTop: "16px" }}>
+              <Button asChild variant="outline" size="sm">
+                <a href={i.mapsUrl} target="_blank" rel="noreferrer">
+                  <MapPin className="w-3.5 h-3.5 mr-1.5" />
+                  {t.mapDirections}
+                </a>
+              </Button>
+            </div>
+          )}
+        </section>
+
+        {/* Love Story Section */}
+        {story && (
+          <section className="custom-ai-story" data-reveal data-fly="up" style={{ textAlign: "center", padding: "28px 16px", background: "white", borderRadius: "16px", margin: "20px 0", border: "1px solid oklch(0.92 0.02 60 / 40%)" }}>
+            <p style={{ fontSize: "0.8rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "oklch(0.5 0.1 45)", margin: "0 0 6px" }}>{lang === "am" ? "የፍቅር ታሪካችን" : "Our Love Story"}</p>
+            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "1.75rem", margin: "0 0 14px" }}>{t.storyHeadline}</h2>
+            <p style={{ maxWidth: "560px", margin: "0 auto", lineHeight: 1.8, color: "oklch(0.35 0.03 40)" }}>{story}</p>
+          </section>
+        )}
+
+        {!compact && (
+          <div className="invitation-actions" style={{ maxWidth: "760px", margin: "24px auto" }}>
+            <Button variant="outline" onClick={() => window.print()}>
+              <Printer aria-hidden="true" /> Print
+            </Button>
+            <Button onClick={() => void share()}>
+              <Share2 aria-hidden="true" /> Share invitation
+            </Button>
+          </div>
+        )}
+
+        <Gallery images={i.galleryImages} hero={hero} lang={lang} />
+        <Closing invitation={i} slug={slug} token={token} lang={lang} />
+      </article>
     </main>
   );
 }
