@@ -9,13 +9,10 @@ import { sampleInvitation, TEMPLATE_IDS, templateMeta, normalizeTemplateId, type
 export const Route = createFileRoute("/templates/$templateId")({
   beforeLoad: ({ params }) => {
     const rawId = (params.templateId as string).toLowerCase().trim();
-    if (rawId === "custome-ai") {
-      throw redirect({
-        to: "/templates/$templateId",
-        params: { templateId: "custom-ai" },
-      });
+    const id = normalizeTemplateId(rawId);
+    if (!TEMPLATE_IDS.includes(rawId as TemplateId) && !TEMPLATE_IDS.includes(id)) {
+      throw notFound();
     }
-    if (!TEMPLATE_IDS.includes(rawId as TemplateId)) throw notFound();
   },
   head: ({ params }) => {
     const id = normalizeTemplateId(params.templateId as string);

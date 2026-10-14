@@ -961,15 +961,15 @@ function CustomAiTemplate({
         {/* Venue & Details Section */}
         <section className="custom-ai-details" data-reveal data-fly="up" style={{ padding: "24px 0 16px" }}>
           <div className="details-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", background: "oklch(0.98 0.015 80)", border: "1px solid oklch(0.9 0.03 60 / 50%)", borderRadius: "16px", padding: "20px" }}>
-            <Detail icon={CalendarDays} label={t.when} value={`${formatWeddingDate(i.weddingDate)} · ${i.weddingTime || ""}`} tba={t.dateTba} />
-            <Detail icon={MapPin} label={t.where} value={[venueText, addressText].filter(Boolean).join(" · ")} tba={t.venueTba} />
+            <Detail icon={CalendarDays} label={t.date} value={`${formatWeddingDate(i.weddingDate)} · ${i.weddingTime || ""}`} tba={t.tba} />
+            <Detail icon={MapPin} label={t.place} value={[venueText, addressText].filter(Boolean).join(" · ")} tba={t.tba} />
           </div>
           {i.mapsUrl && (
             <div style={{ textAlign: "center", marginTop: "16px" }}>
               <Button asChild variant="outline" size="sm">
                 <a href={i.mapsUrl} target="_blank" rel="noreferrer">
                   <MapPin className="w-3.5 h-3.5 mr-1.5" />
-                  {t.mapDirections}
+                  {t.viewLocation}
                 </a>
               </Button>
             </div>

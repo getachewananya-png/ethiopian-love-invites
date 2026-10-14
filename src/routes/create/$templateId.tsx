@@ -30,13 +30,10 @@ export const Route = createFileRoute("/create/$templateId")({
   }),
   beforeLoad: ({ params }) => {
     const rawId = (params.templateId as string).toLowerCase().trim();
-    if (rawId === "custome-ai") {
-      throw redirect({
-        to: "/create/$templateId",
-        params: { templateId: "custom-ai" },
-      });
+    const id = normalizeTemplateId(rawId);
+    if (!TEMPLATE_IDS.includes(rawId as TemplateId) && !TEMPLATE_IDS.includes(id)) {
+      throw notFound();
     }
-    if (!TEMPLATE_IDS.includes(rawId as TemplateId)) throw notFound();
   },
   head: ({ params }) => {
     const id = normalizeTemplateId(params.templateId as string);
@@ -121,7 +118,7 @@ function Builder() {
   const [step,setStep]=useState(0); const [saving,setSaving]=useState(false); const [loadingEdit,setLoadingEdit]=useState(isEditing); const [success,setSuccess]=useState<string>(); const [qr,setQr]=useState<string>(); const [drag,setDrag]=useState<string|null>(null); const [printModalOpen,setPrintModalOpen]=useState(false); const heroRef=useRef<HTMLInputElement>(null); const galleryRef=useRef<HTMLInputElement>(null);
   const referenceRef=useRef<HTMLInputElement>(null);
   const [generatingAiHero, setGeneratingAiHero] = useState(false);
-  const [aiPreset, setAiPreset] = useState<AiStylePreset>("royal-burgundy-gold");
+  const [aiPreset, setAiPreset] = useState<string>("royal-burgundy-gold");
   const [extractedPalette, setExtractedPalette] = useState<ExtractedPalette | null>(null);
   const storageKey=`tizita-draft-${id}`;
   const [data,setData]=useState<WeddingInvitation>(()=>({...sampleInvitation,templateId:id,brideName:"",groomName:"",brideNameAm:"",groomNameAm:"",primaryPhotoUrl:"",galleryImages:[]}));
@@ -178,10 +175,20 @@ function Builder() {
 
     const saved = localStorage.getItem(storageKey);
     if (saved) {
-      try { setData(JSON.parse(saved)); } catch { /* ignore corrupt draft */ }
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object") {
+          setData((prev) => ({
+            ...prev,
+            ...parsed,
+            templateId: id,
+            galleryImages: Array.isArray(parsed.galleryImages) ? parsed.galleryImages : [],
+          }));
+        }
+      } catch { /* ignore corrupt draft */ }
     }
     setHydrated(true);
-  }, [storageKey, isEditing, editInvitationId, navigate]);
+  }, [storageKey, isEditing, editInvitationId, navigate, id]);
 
   useEffect(() => {
     if (hydrated && !isEditing) localStorage.setItem(storageKey, JSON.stringify(data));
@@ -219,19 +226,16 @@ function Builder() {
     }
   };
 
-  const handleGenerateAiHero = async (presetOverride?: AiStylePreset) => {
-    const targetPreset = presetOverride || (data.aiStylePreset as AiStylePreset) || aiPreset;
+  const handleGenerateAiHero = async (presetOverride?: string) => {
+    const targetPreset = presetOverride || data.aiStylePreset || aiPreset;
     setGeneratingAiHero(true);
     try {
       const artwork = await generateAiHeroArtwork({
         brideName: data.brideName || "Hana Tesfaye",
         groomName: data.groomName || "Abebe Mekonnen",
-        brideNameAm: data.brideNameAm,
-        groomNameAm: data.groomNameAm,
         weddingDate: data.weddingDate || "2025-08-24",
         venue: data.venue || "Addis Ababa",
-        venueAm: data.venueAm,
-        preset: targetPreset,
+        stylePresetId: targetPreset,
         referenceImageDataUrl: data.referenceImageUrl,
       });
       setData((curr) => ({
@@ -515,15 +519,18 @@ function Builder() {
                             <div className="flex items-center gap-1.5 mt-2">
                               <span
                                 className="w-3 h-3 rounded-full border border-black/10"
-                                style={{ backgroundColor: preset.palette.primary }}
+                                style={{ backgroundColor: preset.primaryColor }}
+                                title="Primary"
                               />
                               <span
                                 className="w-3 h-3 rounded-full border border-black/10"
-                                style={{ backgroundColor: preset.palette.accent }}
+                                style={{ backgroundColor: preset.accentColor }}
+                                title="Accent"
                               />
                               <span
                                 className="w-3 h-3 rounded-full border border-black/10"
-                                style={{ backgroundColor: preset.palette.background }}
+                                style={{ backgroundColor: preset.bgGradient[0] }}
+                                title="Background"
                               />
                             </div>
                           </button>
