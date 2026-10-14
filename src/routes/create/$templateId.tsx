@@ -21,6 +21,7 @@ import {
   generateAiHeroArtwork,
   type ExtractedPalette,
 } from "@/lib/ai-template-generator";
+import { generateGeminiWeddingHero } from "@/lib/gemini.functions";
 
 export const Route = createFileRoute("/create/$templateId")({
   validateSearch: (search: Record<string, unknown>): { edit?: string | undefined } => ({
@@ -243,6 +244,37 @@ function Builder() {
   const handleGenerateAiHero = async () => {
     setGeneratingAiHero(true);
     try {
+      // 1. Attempt generation via Google Gemini (Gemini 2.0 Flash Vision + Imagen 3)
+      try {
+        const geminiRes = await generateGeminiWeddingHero({
+          data: {
+            brideName: data.brideName || "Hana Tesfaye",
+            groomName: data.groomName || "Abebe Mekonnen",
+            weddingDate: data.weddingDate || "2025-08-24",
+            venue: data.venue || "Addis Ababa",
+            referenceImageDataUrl: data.referenceImageUrl,
+          },
+        });
+
+        if (geminiRes.success && geminiRes.imageUrl) {
+          setData((curr) => ({
+            ...curr,
+            primaryPhotoUrl: geminiRes.imageUrl!,
+          }));
+          toast.success("✨ Brand-new AI wedding artwork generated with Google Gemini!");
+          return;
+        }
+
+        if (geminiRes.isMissingApiKey) {
+          console.info("Notice: Add GEMINI_API_KEY to your .env file to enable Google Imagen 3.");
+        } else if (geminiRes.error) {
+          console.warn("Gemini generation notice:", geminiRes.error);
+        }
+      } catch (geminiErr) {
+        console.warn("Gemini call skipped, using local high-resolution engine:", geminiErr);
+      }
+
+      // 2. Local high-resolution artwork engine
       const artwork = await generateAiHeroArtwork({
         brideName: data.brideName || "Hana Tesfaye",
         groomName: data.groomName || "Abebe Mekonnen",
@@ -251,11 +283,12 @@ function Builder() {
         referenceImageDataUrl: data.referenceImageUrl,
         couplePhotoDataUrl: data.primaryPhotoUrl && !data.primaryPhotoUrl.startsWith("data:") ? data.primaryPhotoUrl : undefined,
       });
+
       setData((curr) => ({
         ...curr,
         primaryPhotoUrl: artwork,
       }));
-      toast.success("✨ Custom hero section artwork generated from your reference design!");
+      toast.success("✨ Custom hero section artwork synthesized from your reference design!");
     } catch (err) {
       console.error("AI hero generation error:", err);
       toast.error("Could not generate hero artwork. Please try again.");
