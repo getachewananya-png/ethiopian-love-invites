@@ -185,13 +185,30 @@ function Builder() {
             galleryImages: Array.isArray(parsed.galleryImages) ? parsed.galleryImages : [],
           }));
         }
-      } catch { /* ignore corrupt draft */ }
+      } catch (e) {
+        console.warn("Corrupted or oversized draft cleared:", e);
+        try { localStorage.removeItem(storageKey); } catch {}
+      }
     }
     setHydrated(true);
   }, [storageKey, isEditing, editInvitationId, navigate, id]);
 
   useEffect(() => {
-    if (hydrated && !isEditing) localStorage.setItem(storageKey, JSON.stringify(data));
+    if (hydrated && !isEditing) {
+      try {
+        const toSave = { ...data };
+        // Don't store oversized data URLs in localStorage to prevent QuotaExceededError
+        if (toSave.referenceImageUrl && toSave.referenceImageUrl.length > 300000) {
+          toSave.referenceImageUrl = "";
+        }
+        if (toSave.primaryPhotoUrl && toSave.primaryPhotoUrl.startsWith("data:") && toSave.primaryPhotoUrl.length > 300000) {
+          toSave.primaryPhotoUrl = "";
+        }
+        localStorage.setItem(storageKey, JSON.stringify(toSave));
+      } catch (err) {
+        console.warn("Could not save draft to localStorage (quota exceeded):", err);
+      }
+    }
   }, [data, storageKey, hydrated, isEditing]);
 
   const update=(field:keyof WeddingInvitation,value:unknown)=>setData(current=>({...current,[field]:value}));
@@ -207,13 +224,13 @@ function Builder() {
       toast.error(`${file.name} is not a supported image.`);
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(`${file.name} is over 10MB.`);
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error(`${file.name} is over 15MB.`);
       return;
     }
     setSaving(true);
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await compressImageToDataUrl(file, 800, 0.82);
       setData((curr) => ({ ...curr, referenceImageUrl: dataUrl }));
       const palette = await extractReferencePalette(dataUrl);
       setExtractedPalette(palette);
@@ -792,5 +809,42 @@ function PhotoRow({image,label,onDelete}:{image:string;label:string;onDelete:()=
 function Review({icon:Icon,label,value,onEdit}:{icon:React.ComponentType<{className?:string}>;label:string;value:string;onEdit:()=>void}){return <div className="review-item"><Icon/><div><span>{label}</span><strong>{value}</strong></div><button onClick={onEdit}>Edit</button></div>}
 function HeartIcon(){return <span className="review-heart">♥</span>}
 function fileToBase64(file:File){return new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(",")[1]??"");reader.onerror=reject;reader.readAsDataURL(file)})}
-function fileToDataUrl(file:File){return new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result)??"");reader.onerror=reject;reader.readAsDataURL(file)})}
+function compressImageToDataUrl(file: File, maxDim = 800, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => resolve(String(reader.result) ?? "");
+      img.onload = () => {
+        try {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(String(reader.result) ?? "");
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } catch {
+          resolve(String(reader.result) ?? "");
+        }
+      };
+      img.src = String(reader.result) ?? "";
+    };
+    reader.readAsDataURL(file);
+  });
+}
 function Success({url,qr,onPrint}:{url:string;qr?:string|undefined;onPrint?:(()=>void)|undefined}){const copy=()=>navigator.clipboard.writeText(url).then(()=>toast.success("Invitation link copied"));return <main className="success-page"><div className="success-mark"><Check/></div><p>READY TO SHARE</p><h1>Your Invitation<br/><em>Is Ready!</em></h1><span>Your wedding invitation has been created. Share it with everyone you love.</span><div className="link-box"><div><small>Your Invitation Link</small><strong>{url}</strong></div><button onClick={copy} aria-label="Copy invitation link"><Copy/></button></div><div className="success-actions"><Button asChild size="lg"><a href={url}>Open Invitation</a></Button><Button variant="outline" size="lg" onClick={copy}><Copy/>Copy Link</Button>{onPrint&&<Button variant="outline" size="lg" onClick={onPrint}><Printer className="w-4 h-4 mr-2"/>Print / Save Image</Button>}</div><div className="share-row"><a href={`https://wa.me/?text=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">WhatsApp</a><a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">Facebook</a><a href={`https://t.me/share/url?url=${encodeURIComponent(url)}`} target="_blank" rel="noreferrer">Telegram</a>{qr&&<a href={qr} download="wedding-invitation-qr.png">Download QR</a>}</div>{qr&&<img className="qr-code" src={qr} alt="Invitation QR code"/>}<Button asChild variant="ghost"><Link to="/">Return to Tizita</Link></Button></main>}

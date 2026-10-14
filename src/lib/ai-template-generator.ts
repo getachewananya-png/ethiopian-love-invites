@@ -107,7 +107,9 @@ export async function extractReferencePalette(dataUrl: string): Promise<Extracte
     }
 
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (!dataUrl.startsWith("data:")) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       try {
         const canvas = document.createElement("canvas");
@@ -238,7 +240,9 @@ export async function generateAiHeroArtwork(params: GenerateHeroParams): Promise
   const loadImage = (src: string): Promise<HTMLImageElement> =>
     new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = "anonymous";
+      if (!src.startsWith("data:")) {
+        img.crossOrigin = "anonymous";
+      }
       img.onload = () => resolve(img);
       img.onerror = reject;
       img.src = src;
